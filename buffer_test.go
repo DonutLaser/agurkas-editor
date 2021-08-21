@@ -339,3 +339,187 @@ func TestMoveRight(t *testing.T) {
 
 	// @TODO (!important) write test for moving right at the end of the line
 }
+
+func TestMoveUp(t *testing.T) {
+	t.Run("Move while on first line", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.MoveUp()
+
+		FailIfFalse(buffer.Cursor.Column == 0, "Cursor column is not where it should be", t)
+
+		result := buffer.GetText()
+		FailNowIfFalse(len(result) == 1, "Incorrect line count received", t)
+		FailIfFalse(result[0] == "abc", "Incorrect resulting text", t)
+	})
+
+	t.Run("Move while not on the first line", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.Insert('e')
+		buffer.Insert('f')
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveUp()
+
+		FailIfFalse(buffer.Cursor.Column == 1, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 0, "Cursor line is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abc", "def"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+
+	t.Run("Move up when previous line is too short", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.Insert('e')
+		buffer.Insert('f')
+		buffer.Insert('g')
+		buffer.Insert('h')
+		buffer.Insert('i')
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveUp()
+
+		t.Log(buffer.Cursor.Column)
+		FailIfFalse(buffer.Cursor.Column == 2, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 0, "Cursor column is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abc", "defghi"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+}
+
+func TestMoveDown(t *testing.T) {
+	t.Run("Move while on the last line", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.Insert('e')
+		buffer.Insert('f')
+		buffer.Insert('g')
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveDown()
+
+		FailIfFalse(buffer.Cursor.Column == 4, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 1, "Cursor column is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abc", "defg"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+
+	t.Run("move while not on the last line", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.Insert('e')
+		buffer.Insert('f')
+		buffer.Insert('g')
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveLeft()
+		buffer.MoveUp()
+		buffer.MoveRight()
+		buffer.MoveDown()
+
+		FailIfFalse(buffer.Cursor.Column == 1, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 1, "Cursor column is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abc", "defg"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+
+	t.Run("Move up when next line is too short", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('d')
+		buffer.Insert('e')
+		buffer.Insert('\n')
+		buffer.Insert('f')
+		buffer.Insert('g')
+		buffer.Insert('h')
+		buffer.MoveUp()
+		buffer.MoveRight()
+		buffer.MoveRight()
+		buffer.MoveDown()
+
+		FailIfFalse(buffer.Cursor.Column == 3, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 1, "Cursor column is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abcde", "fgh"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+}
+
+func TestMovementScenarios(t *testing.T) {
+	t.Run("Moving up shouldn't offset the cursor to the left", func(t *testing.T) {
+		buffer := CreateBuffer(16)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.MoveUp()
+
+		FailIfFalse(buffer.Cursor.Column == 1, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Line == 0, "Cursor line is not where it should be", t)
+
+		FailIfFalse(buffer.GapStart == 1, "Gap start is not where it should be", t)
+		FailIfFalse(buffer.GapEnd == 11, "Gap end is not where it should be", t)
+
+		result := buffer.GetText()
+		expected := []string{"abc", "d"}
+		FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+		for index, line := range result {
+			FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+		}
+	})
+}

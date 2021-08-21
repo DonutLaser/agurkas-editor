@@ -15,9 +15,8 @@ const (
 )
 
 type App struct {
-	Font           *ttf.Font
-	CharacterWidth int32
-	LineHeight     int32
+	Font       *ttf.Font
+	LineHeight int32
 
 	Buffer Buffer
 
@@ -30,16 +29,33 @@ func Init() (result App) {
 	font, err := ttf.OpenFont("consola.ttf", 16)
 	checkError(err)
 	result.Font = font
-	result.CharacterWidth = GetCharacterWidth(font)
 	result.LineHeight = 16
 
 	result.Mode = Mode_Normal
-	result.Buffer = CreateBuffer(result.LineHeight)
+	result.Buffer = CreateBuffer(result.Font, result.LineHeight)
 
 	return
 }
 
 func (app *App) handleInputNormal(input Input) {
+	// @TODO (!important) w and W (move word)
+	// @TODO (!important) e and E (move end word)
+	// @TODO (!important) r (replace)
+	// @TODO (!important) y (yank)
+	// @TODO (!important) u (undo)
+	// @TODO (!important) p and P (paste)
+	// @TODO (!important) o and O (new line before and after)
+	// @TODO (!important) I and A (insert at start and end)
+	// @TODO (!important) D and dd and dj and dk (delete)
+	// @TODO (!important) J (move next line back)
+	// @TODO (!important) H and L (move to viewport top and down)
+	// @TODO (!important) f and F (find forward and backward)
+	// @TODO (!important) v and V (visual mode and visual line mode)
+	// @TODO (!important) m (mark)
+	// @TODO (!important) G (goto file end)
+	// @TODO (!important) gg (goto file start)
+	// @TODO (!important) b and B (move word back)
+
 	switch input.TypedCharacter {
 	case "j":
 		app.Buffer.MoveDown()
@@ -56,6 +72,10 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveRight()
 	case "x":
 		app.Buffer.RemoveAfter()
+	case "0":
+		app.Buffer.MoveToStartOfLine()
+	case "$":
+		app.Buffer.MoveToEndOfLine()
 	}
 }
 
@@ -84,7 +104,7 @@ func (app *App) handleInputInsert(input Input) {
 }
 
 func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
-	app.Buffer.Render(renderer, app.Font, app.Mode, app.CharacterWidth)
+	app.Buffer.Render(renderer, app.Font, app.Mode, windowHeight)
 
 	statusBarRect := sdl.Rect{
 		X: 0,
