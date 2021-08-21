@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -15,14 +15,17 @@ type Buffer struct {
 	GapStart int
 	GapEnd   int
 
+	CharacterWidth int32
+
 	Cursor Cursor
 }
 
-func CreateBuffer(lineHeight int32) Buffer {
+func CreateBuffer(font *ttf.Font, lineHeight int32) Buffer {
 	result := Buffer{
-		Data:     make([]byte, 16),
-		GapStart: 0,
-		GapEnd:   15,
+		Data:           make([]byte, 16),
+		GapStart:       0,
+		GapEnd:         15,
+		CharacterWidth: GetCharacterWidth(font),
 		Cursor: Cursor{
 			WidthNormal: 8,
 			WidthInsert: 2,
@@ -92,6 +95,7 @@ func (buffer *Buffer) MoveRight() {
 }
 
 func (buffer *Buffer) MoveUp() {
+	// @TODO (!important) remember column
 	endColumn := buffer.Cursor.Column
 
 	for buffer.Cursor.Column > 0 {
@@ -113,6 +117,7 @@ func (buffer *Buffer) MoveUp() {
 }
 
 func (buffer *Buffer) MoveDown() {
+	// @TODO (!important) remember column
 	endColumn := buffer.Cursor.Column
 	lineSize := buffer.getCurrentLineSize() // @TODO (!important) this might not be needed, we can just check if the next symbol will be newline
 
@@ -126,12 +131,22 @@ func (buffer *Buffer) MoveDown() {
 		buffer.Cursor.Column = 0
 		buffer.Cursor.Line += 1
 
-		fmt.Println(string(buffer.Data[buffer.GapStart-1]))
-		fmt.Println(string(buffer.Data[buffer.GapEnd+1]))
-
-		for buffer.Cursor.Column < endColumn {
-			buffer.moveRightInternal()
+		// @TODO (!important) when the next line is shorter than the current column, this will unnecessarily try moving right
+		for i := 0; i < int(endColumn); i += 1 {
+			buffer.MoveRight()
 		}
+	}
+}
+
+func (buffer *Buffer) MoveToStartOfLine() {
+	for buffer.Cursor.Column > 0 {
+		buffer.MoveLeft()
+	}
+}
+
+func (buffer *Buffer) MoveToEndOfLine() {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.Data[buffer.GapEnd+1] != '\n' {
+		buffer.MoveRight()
 	}
 }
 
@@ -150,18 +165,46 @@ func (buffer *Buffer) GetText() []string {
 	return strings.Split(sb.String(), "\n")
 }
 
-func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, characterWidth int32) {
-	buffer.Cursor.Render(renderer, mode, characterWidth)
+func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, screenHeight int32) {
+	gutterRect := sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: 48,
+		H: screenHeight,
+	}
+	DrawRect(renderer, &gutterRect, sdl.Color{R: 10, G: 10, B: 10, A: 10})
+
+	buffer.Cursor.Render(renderer, mode, buffer.CharacterWidth, gutterRect.W)
 
 	text := buffer.GetText()
 	for index, line := range text {
+		lineNumber := Abs(int(buffer.Cursor.Line) - index)
+		lineNumberColor := sdl.Color{R: 80, G: 80, B: 80, A: 255}
+		if lineNumber == 0 {
+			lineNumber = index + 1
+			lineNumberColor.R = 150
+			lineNumberColor.G = 150
+			lineNumberColor.B = 150
+		}
+
+		lineNumberStr := strconv.Itoa(lineNumber)
+		width, height := GetStringSize(font, lineNumberStr)
+		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
+		lineNumberRect := sdl.Rect{
+			X: 10,
+			Y: 10 + int32(index)*height,
+			W: width,
+			H: height,
+		}
+		DrawText(renderer, font, lineNumberStr, &lineNumberRect, lineNumberColor)
+
 		if len(line) == 0 {
 			continue
 		}
 
-		width, height := GetStringSize(font, line)
-		rect := sdl.Rect{
-			X: 10,
+		width, height = GetStringSize(font, line)
+		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
+			X: gutterRect.W + 10,
 			Y: 10 + int32(index)*height,
 			W: width,
 			H: height,
