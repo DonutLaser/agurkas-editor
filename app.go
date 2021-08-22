@@ -53,7 +53,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) dd and dj and dk (delete)
+	// @TODO (!important) dj and dk (delete)
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
@@ -164,8 +164,14 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 
 	switch input.TypedCharacter {
 	case "d":
-		app.Buffer.RemoveLine()
+		app.Buffer.RemoveCurrentLine()
 		app.Submode = Submode_None
+	case "j":
+		app.Submode = Submode_None
+		app.Buffer.RemoveLines(Direction_Down, 1)
+	case "k":
+		app.Submode = Submode_None
+		app.Buffer.RemoveLines(Direction_Up, 1)
 	}
 }
 

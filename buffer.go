@@ -10,6 +10,13 @@ import (
 
 // @TODO (!important) write tests for this
 
+type Direction uint8
+
+const (
+	Direction_Up Direction = iota
+	Direction_Down
+)
+
 type Buffer struct {
 	Data     []byte
 	GapStart int
@@ -98,7 +105,8 @@ func (buffer *Buffer) RemoveAfter() {
 	buffer.GapEnd += 1
 }
 
-func (buffer *Buffer) RemoveLine() {
+// @TODO (!important) write tests for this
+func (buffer *Buffer) RemoveCurrentLine() {
 	for buffer.Cursor.Column > 0 {
 		buffer.RemoveBefore()
 	}
@@ -107,6 +115,29 @@ func (buffer *Buffer) RemoveLine() {
 		buffer.RemoveAfter()
 	}
 	buffer.RemoveAfter()
+}
+
+// @TODO (!important) write tests for this
+func (buffer *Buffer) RemoveLines(direction Direction, count int) {
+	if direction == Direction_Up {
+		buffer.RemoveCurrentLine()
+
+		for i := 0; i < count; i += 1 {
+			if buffer.Cursor.Line == 0 {
+				break
+			}
+
+			buffer.MoveUp()
+			buffer.RemoveCurrentLine()
+		}
+
+		return
+	}
+
+	buffer.RemoveCurrentLine()
+	for i := 0; i < count; i += 1 {
+		buffer.RemoveCurrentLine()
+	}
 }
 
 // @TODO (!important) write tests for this
