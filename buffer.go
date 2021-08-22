@@ -27,6 +27,9 @@ type Buffer struct {
 	Cursor Cursor
 
 	BookmarkLine int32
+
+	Filepath string
+	Dirty    bool
 }
 
 func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
@@ -41,6 +44,8 @@ func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 			Height:      lineHeight,
 		},
 		BookmarkLine: 0,
+		Filepath:     "",
+		Dirty:        false,
 	}
 
 	return result
@@ -60,6 +65,8 @@ func (buffer *Buffer) Insert(char byte) {
 	if buffer.GapEnd-buffer.GapStart == 1 {
 		buffer.expand()
 	}
+
+	buffer.Dirty = true
 }
 
 // @TODO (!important) write tests for this
@@ -69,17 +76,23 @@ func (buffer *Buffer) ReplaceCurrentCharacter(char byte) {
 	}
 
 	buffer.Data[buffer.GapEnd+1] = char
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) InsertNewLineBelow() {
 	buffer.MoveToEndOfLine()
 	buffer.Insert('\n')
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) InsertNewLineAbove() {
 	buffer.MoveToStartOfLine()
 	buffer.Insert('\n')
 	buffer.MoveUp()
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) RemoveBefore() {
@@ -97,6 +110,8 @@ func (buffer *Buffer) RemoveBefore() {
 	} else {
 		buffer.Cursor.Column -= 1
 	}
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) RemoveAfter() {
@@ -106,6 +121,8 @@ func (buffer *Buffer) RemoveAfter() {
 
 	buffer.Data[buffer.GapEnd] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.GapEnd += 1
+
+	buffer.Dirty = true
 }
 
 // @TODO (!important) write tests for this
@@ -118,6 +135,8 @@ func (buffer *Buffer) RemoveCurrentLine() {
 		buffer.RemoveAfter()
 	}
 	buffer.RemoveAfter()
+
+	buffer.Dirty = true
 }
 
 // @TODO (!important) write tests for thi
@@ -141,6 +160,8 @@ func (buffer *Buffer) RemoveLines(direction Direction, count int) {
 	for i := 0; i < count; i += 1 {
 		buffer.RemoveCurrentLine()
 	}
+
+	buffer.Dirty = true
 }
 
 // @TODO (!important) write tests for this
@@ -150,6 +171,8 @@ func (buffer *Buffer) RemoveRemainingLine() {
 		buffer.RemoveAfter()
 		char = buffer.getNextCharacter()
 	}
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) MoveLeft() {
@@ -264,6 +287,8 @@ func (buffer *Buffer) MergeLineBelow() {
 	buffer.RemoveAfter()
 	buffer.Insert(' ')
 	buffer.MoveLeft()
+
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) MarkCurrentPosition() {

@@ -70,65 +70,69 @@ func (app *App) handleInputNormal(input Input) {
 		return
 	}
 
+	if input.Ctrl && input.TypedCharacter == 's' && app.Buffer.Dirty {
+		success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+		if success {
+			app.Buffer.Dirty = false
+		}
+	}
+
 	switch input.TypedCharacter {
-	case "j":
+	case 'j':
 		app.Buffer.MoveDown()
-	case "k":
+	case 'k':
 		app.Buffer.MoveUp()
-	case "h":
+	case 'h':
 		app.Buffer.MoveLeft()
-	case "l":
+	case 'l':
 		app.Buffer.MoveRight()
-	case "i":
+	case 'i':
 		app.Mode = Mode_Insert
-	case "I":
+	case 'I':
 		app.Mode = Mode_Insert
 		app.Buffer.MoveToStartOfLine()
-	case "a":
+	case 'a':
 		app.Mode = Mode_Insert
 		app.Buffer.MoveRight()
-	case "A":
+	case 'A':
 		app.Mode = Mode_Insert
 		app.Buffer.MoveToEndOfLine()
-	case "o":
+	case 'o':
 		app.Mode = Mode_Insert
 		app.Buffer.InsertNewLineBelow()
-	case "O":
+	case 'O':
 		app.Mode = Mode_Insert
 		app.Buffer.InsertNewLineAbove()
-	case "x":
+	case 'x':
 		app.Buffer.RemoveAfter()
-	case "D":
+	case 'D':
 		app.Buffer.RemoveRemainingLine()
-	case "0":
+	case '0':
 		app.Buffer.MoveToStartOfLine()
-	case "$":
+	case '$':
 		app.Buffer.MoveToEndOfLine()
-	case "G":
+	case 'G':
 		app.Buffer.MoveToBufferEnd()
-	case "J":
+	case 'J':
 		app.Buffer.MergeLineBelow()
-	case "r":
+	case 'r':
 		app.Submode = Submode_Replace
-	case "d":
+	case 'd':
 		app.Submode = Submode_Delete
-	case "m":
+	case 'm':
 		app.Buffer.MarkCurrentPosition()
-	case "`":
+	case '`':
 		app.Buffer.MoveToBookmark()
 	}
 }
 
 func (app *App) handleInputInsert(input Input) {
-	ctrl := input.Modifier & Modifier_Ctrl
-	alt := input.Modifier & Modifier_Alt
-
-	if ctrl != 0 || alt != 0 {
+	if input.Ctrl || input.Alt {
 		return
 	}
 
-	if input.TypedCharacter != "" {
-		app.Buffer.Insert(input.TypedCharacter[0])
+	if input.TypedCharacter != 0 {
+		app.Buffer.Insert(input.TypedCharacter)
 		return
 	}
 
@@ -144,10 +148,7 @@ func (app *App) handleInputInsert(input Input) {
 }
 
 func (app *App) handleInputSubmodeReplace(input Input) {
-	ctrl := input.Modifier & Modifier_Ctrl
-	alt := input.Modifier & Modifier_Alt
-
-	if ctrl != 0 || alt != 0 {
+	if input.Ctrl || input.Alt {
 		return
 	}
 
@@ -156,18 +157,15 @@ func (app *App) handleInputSubmodeReplace(input Input) {
 		return
 	}
 
-	if input.TypedCharacter != "" {
-		app.Buffer.ReplaceCurrentCharacter(input.TypedCharacter[0])
+	if input.TypedCharacter != 0 {
+		app.Buffer.ReplaceCurrentCharacter(input.TypedCharacter)
 		app.Submode = Submode_None
 		return
 	}
 }
 
 func (app *App) handleInputSubmodeDelete(input Input) {
-	ctrl := input.Modifier & Modifier_Ctrl
-	alt := input.Modifier & Modifier_Alt
-
-	if ctrl != 0 || alt != 0 {
+	if input.Ctrl || input.Alt {
 		return
 	}
 
@@ -177,13 +175,13 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	}
 
 	switch input.TypedCharacter {
-	case "d":
+	case 'd':
 		app.Buffer.RemoveCurrentLine()
 		app.Submode = Submode_None
-	case "j":
+	case 'j':
 		app.Submode = Submode_None
 		app.Buffer.RemoveLines(Direction_Down, 1)
-	case "k":
+	case 'k':
 		app.Submode = Submode_None
 		app.Buffer.RemoveLines(Direction_Up, 1)
 	}

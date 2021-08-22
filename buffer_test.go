@@ -14,6 +14,8 @@ func TestCreateBuffer(t *testing.T) {
 	FailIfFalse(result.Cursor.Column == 0, "Incorrect cursor column", t)
 	FailIfFalse(result.Cursor.Line == 0, "Incorrect cursor line", t)
 	FailIfFalse(result.Cursor.Height == 16, "Incorrect cursor height", t)
+	FailIfFalse(result.Filepath == "", "Filename should be empty", t)
+	FailIfFalse(result.Dirty == false, "New buffer should not be dirty", t)
 }
 
 func TestGetText(t *testing.T) {
