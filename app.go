@@ -44,7 +44,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) o and O (new line before and after)
 	// @TODO (!important) I and A (insert at start and end)
 	// @TODO (!important) D and dd and dj and dk (delete)
 	// @TODO (!important) J (move next line back)
@@ -67,9 +66,15 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveRight()
 	case "i":
 		app.Mode = Mode_Insert
+	case "I":
+		app.Mode = Mode_Insert
+		app.Buffer.MoveToStartOfLine()
 	case "a":
 		app.Mode = Mode_Insert
 		app.Buffer.MoveRight()
+	case "A":
+		app.Mode = Mode_Insert
+		app.Buffer.MoveToEndOfLine()
 	case "x":
 		app.Buffer.RemoveAfter()
 	case "0":
@@ -77,11 +82,11 @@ func (app *App) handleInputNormal(input Input) {
 	case "$":
 		app.Buffer.MoveToEndOfLine()
 	case "o":
+		app.Mode = Mode_Insert
 		app.Buffer.InsertNewLineBelow()
-		app.Mode = Mode_Insert
 	case "O":
-		app.Buffer.InsertNewLineAbove()
 		app.Mode = Mode_Insert
+		app.Buffer.InsertNewLineAbove()
 	}
 }
 
