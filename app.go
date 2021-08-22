@@ -53,7 +53,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) dj and dk (delete)
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
@@ -61,6 +60,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) G (goto file end)
 	// @TODO (!important) gg (goto file start)
 	// @TODO (!important) b and B (move word back)
+	// @TODO (!important) cc and C and ck and cj (change)
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
@@ -112,6 +112,10 @@ func (app *App) handleInputNormal(input Input) {
 		app.Submode = Submode_Replace
 	case "d":
 		app.Submode = Submode_Delete
+	case "m":
+		app.Buffer.MarkCurrentPosition()
+	case "`":
+		app.Buffer.MoveToBookmark()
 	}
 }
 
@@ -147,6 +151,11 @@ func (app *App) handleInputSubmodeReplace(input Input) {
 		return
 	}
 
+	if input.Escape {
+		app.Submode = Submode_None
+		return
+	}
+
 	if input.TypedCharacter != "" {
 		app.Buffer.ReplaceCurrentCharacter(input.TypedCharacter[0])
 		app.Submode = Submode_None
@@ -159,6 +168,11 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	alt := input.Modifier & Modifier_Alt
 
 	if ctrl != 0 || alt != 0 {
+		return
+	}
+
+	if input.Escape {
+		app.Submode = Submode_None
 		return
 	}
 

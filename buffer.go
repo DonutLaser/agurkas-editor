@@ -25,6 +25,8 @@ type Buffer struct {
 	CharacterWidth int32
 
 	Cursor Cursor
+
+	BookmarkLine int32
 }
 
 func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
@@ -38,6 +40,7 @@ func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 			WidthInsert: 2,
 			Height:      lineHeight,
 		},
+		BookmarkLine: 0,
 	}
 
 	return result
@@ -117,7 +120,7 @@ func (buffer *Buffer) RemoveCurrentLine() {
 	buffer.RemoveAfter()
 }
 
-// @TODO (!important) write tests for this
+// @TODO (!important) write tests for thi
 func (buffer *Buffer) RemoveLines(direction Direction, count int) {
 	if direction == Direction_Up {
 		buffer.RemoveCurrentLine()
@@ -227,6 +230,20 @@ func (buffer *Buffer) MoveToEndOfLine() {
 	}
 }
 
+func (buffer *Buffer) MoveToBookmark() {
+	if buffer.BookmarkLine < buffer.Cursor.Line {
+		for buffer.Cursor.Line != buffer.BookmarkLine {
+			buffer.MoveUp()
+		}
+
+		return
+	}
+
+	for buffer.Cursor.Line != buffer.BookmarkLine {
+		buffer.MoveDown()
+	}
+}
+
 // @TODO (!important) write tests for this
 // @TODO (!important) improve: remove all white from the next line as well
 func (buffer *Buffer) MergeLineBelow() {
@@ -240,6 +257,10 @@ func (buffer *Buffer) MergeLineBelow() {
 	buffer.RemoveAfter()
 	buffer.Insert(' ')
 	buffer.MoveLeft()
+}
+
+func (buffer *Buffer) MarkCurrentPosition() {
+	buffer.BookmarkLine = buffer.Cursor.Line
 }
 
 func (buffer *Buffer) GetText() []string {
