@@ -230,6 +230,12 @@ func (buffer *Buffer) MoveToEndOfLine() {
 	}
 }
 
+func (buffer *Buffer) MoveToBufferEnd() {
+	for buffer.GapEnd < len(buffer.Data)-1 {
+		buffer.MoveDown()
+	}
+}
+
 func (buffer *Buffer) MoveToBookmark() {
 	if buffer.BookmarkLine < buffer.Cursor.Line {
 		for buffer.Cursor.Line != buffer.BookmarkLine {
