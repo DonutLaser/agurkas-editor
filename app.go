@@ -6,12 +6,20 @@ import (
 )
 
 type Mode string
+type Submode string
 
 const (
-	Mode_Normal     Mode = "Normal"
-	Mode_Insert     Mode = "Insert"
-	Mode_Visual     Mode = "Visual"
-	Mode_VisualLine Mode = "Visual Line"
+	Mode_Normal     Mode = "NORMAL"
+	Mode_Insert     Mode = "INSERT"
+	Mode_Visual     Mode = "VISUAL"
+	Mode_VisualLine Mode = "VISUAL LINE"
+)
+
+const (
+	Submode_Replace Submode = "Replace"
+	Submode_Delete  Submode = "Delete"
+	Submode_Goto    Submode = "Goto"
+	Submode_None    Submode = "None"
 )
 
 type App struct {
@@ -20,7 +28,8 @@ type App struct {
 
 	Buffer Buffer
 
-	Mode Mode
+	Mode    Mode
+	Submode Submode
 }
 
 func Init() (result App) {
@@ -32,6 +41,7 @@ func Init() (result App) {
 	result.LineHeight = 16
 
 	result.Mode = Mode_Normal
+	result.Submode = Submode_None
 	result.Buffer = CreateBuffer(result.LineHeight, GetCharacterWidth(result.Font))
 
 	return
@@ -40,12 +50,10 @@ func Init() (result App) {
 func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) w and W (move word)
 	// @TODO (!important) e and E (move end word)
-	// @TODO (!important) r (replace)
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
 	// @TODO (!important) dd and dj and dk (delete)
-	// @TODO (!important) J (move next line back)
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
@@ -53,6 +61,16 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) G (goto file end)
 	// @TODO (!important) gg (goto file start)
 	// @TODO (!important) b and B (move word back)
+
+	if app.Submode == Submode_Replace {
+		app.handleInputSubmodeReplace(input)
+		return
+	}
+
+	if app.Submode == Submode_Delete {
+		app.handleInputSubmodeDelete(input)
+		return
+	}
 
 	switch input.TypedCharacter {
 	case "j":
@@ -83,13 +101,17 @@ func (app *App) handleInputNormal(input Input) {
 	case "x":
 		app.Buffer.RemoveAfter()
 	case "D":
-		app.Buffer.RemoveEverytingAfter()
+		app.Buffer.RemoveRemainingLine()
 	case "0":
 		app.Buffer.MoveToStartOfLine()
 	case "$":
 		app.Buffer.MoveToEndOfLine()
 	case "J":
 		app.Buffer.MergeLineBelow()
+	case "r":
+		app.Submode = Submode_Replace
+	case "d":
+		app.Submode = Submode_Delete
 	}
 }
 
@@ -117,6 +139,36 @@ func (app *App) handleInputInsert(input Input) {
 	}
 }
 
+func (app *App) handleInputSubmodeReplace(input Input) {
+	ctrl := input.Modifier & Modifier_Ctrl
+	alt := input.Modifier & Modifier_Alt
+
+	if ctrl != 0 || alt != 0 {
+		return
+	}
+
+	if input.TypedCharacter != "" {
+		app.Buffer.ReplaceCurrentCharacter(input.TypedCharacter[0])
+		app.Submode = Submode_None
+		return
+	}
+}
+
+func (app *App) handleInputSubmodeDelete(input Input) {
+	ctrl := input.Modifier & Modifier_Ctrl
+	alt := input.Modifier & Modifier_Alt
+
+	if ctrl != 0 || alt != 0 {
+		return
+	}
+
+	switch input.TypedCharacter {
+	case "d":
+		app.Buffer.RemoveLine()
+		app.Submode = Submode_None
+	}
+}
+
 func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
 	app.Buffer.Render(renderer, app.Font, app.Mode, windowHeight)
 
@@ -136,6 +188,17 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 		H: statusHeight,
 	}
 	DrawText(renderer, app.Font, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+
+	if app.Submode != Submode_None {
+		submodeWidth, submodeHeight := GetStringSize(app.Font, string(app.Submode))
+		submodeRect := sdl.Rect{
+			X: 10 + statusRect.W + 10,
+			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
+			W: submodeWidth,
+			H: submodeHeight,
+		}
+		DrawText(renderer, app.Font, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	}
 }
 
 func (app *App) Tick(input Input) {

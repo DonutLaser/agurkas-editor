@@ -52,6 +52,15 @@ func (buffer *Buffer) Insert(char byte) {
 	}
 }
 
+// @TODO (!important) write tests for this
+func (buffer *Buffer) ReplaceCurrentCharacter(char byte) {
+	if char == '\n' {
+		return
+	}
+
+	buffer.Data[buffer.GapEnd+1] = char
+}
+
 func (buffer *Buffer) InsertNewLineBelow() {
 	buffer.MoveToEndOfLine()
 	buffer.Insert('\n')
@@ -89,8 +98,19 @@ func (buffer *Buffer) RemoveAfter() {
 	buffer.GapEnd += 1
 }
 
+func (buffer *Buffer) RemoveLine() {
+	for buffer.Cursor.Column > 0 {
+		buffer.RemoveBefore()
+	}
+
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.Data[buffer.GapEnd+1] != '\n' {
+		buffer.RemoveAfter()
+	}
+	buffer.RemoveAfter()
+}
+
 // @TODO (!important) write tests for this
-func (buffer *Buffer) RemoveEverytingAfter() {
+func (buffer *Buffer) RemoveRemainingLine() {
 	char := buffer.getNextCharacter()
 	for char != '\n' && buffer.GapEnd != len(buffer.Data)-1 {
 		buffer.RemoveAfter()
