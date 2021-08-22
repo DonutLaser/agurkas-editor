@@ -176,6 +176,21 @@ func (buffer *Buffer) MoveToEndOfLine() {
 	}
 }
 
+// @TODO (!important) write tests for this
+// @TODO (!important) improve: remove all white from the next line as well
+func (buffer *Buffer) MergeLineBelow() {
+	buffer.MoveToEndOfLine()
+
+	if buffer.GapEnd == len(buffer.Data)-1 {
+		return
+	}
+
+	// We are guaranteed to be removing a new line here
+	buffer.RemoveAfter()
+	buffer.Insert(' ')
+	buffer.MoveLeft()
+}
+
 func (buffer *Buffer) GetText() []string {
 	// @TODO (!important) it is possible to cache the text lines if the text did not change between frames
 	var sb strings.Builder
@@ -220,7 +235,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
 			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-			Y: 10 + int32(index)*height,
+			Y: 5 + int32(index)*height,
 			W: width,
 			H: height,
 		}
@@ -232,8 +247,8 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 
 		width, height = GetStringSize(font, line)
 		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
-			X: gutterRect.W + 10,
-			Y: 10 + int32(index)*height,
+			X: gutterRect.W + 5,
+			Y: 5 + int32(index)*height,
 			W: width,
 			H: height,
 		}

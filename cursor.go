@@ -17,8 +17,8 @@ func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, characterWidth i
 	}
 
 	cursorRect := sdl.Rect{
-		X: gutterWidth + 10 + cursor.Column*characterWidth,
-		Y: 10 + cursor.Line*cursor.Height,
+		X: gutterWidth + 5 + cursor.Column*characterWidth,
+		Y: 5 + cursor.Line*cursor.Height,
 		W: width,
 		H: cursor.Height,
 	}

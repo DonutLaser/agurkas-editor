@@ -44,7 +44,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) D and dd and dj and dk (delete)
+	// @TODO (!important) dd and dj and dk (delete)
 	// @TODO (!important) J (move next line back)
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
@@ -88,6 +88,8 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveToStartOfLine()
 	case "$":
 		app.Buffer.MoveToEndOfLine()
+	case "J":
+		app.Buffer.MergeLineBelow()
 	}
 }
 
