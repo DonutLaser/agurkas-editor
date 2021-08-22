@@ -89,6 +89,15 @@ func (buffer *Buffer) RemoveAfter() {
 	buffer.GapEnd += 1
 }
 
+// @TODO (!important) write tests for this
+func (buffer *Buffer) RemoveEverytingAfter() {
+	char := buffer.getNextCharacter()
+	for char != '\n' && buffer.GapEnd != len(buffer.Data)-1 {
+		buffer.RemoveAfter()
+		char = buffer.getNextCharacter()
+	}
+}
+
 func (buffer *Buffer) MoveLeft() {
 	if buffer.GapStart == 0 || buffer.getPrevCharacter() == '\n' {
 		return
