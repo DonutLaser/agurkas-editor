@@ -20,12 +20,12 @@ type Buffer struct {
 	Cursor Cursor
 }
 
-func CreateBuffer(font *ttf.Font, lineHeight int32) Buffer {
+func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 	result := Buffer{
 		Data:           make([]byte, 16),
 		GapStart:       0,
 		GapEnd:         15,
-		CharacterWidth: GetCharacterWidth(font),
+		CharacterWidth: characterWidth,
 		Cursor: Cursor{
 			WidthNormal: 8,
 			WidthInsert: 2,
@@ -57,7 +57,7 @@ func (buffer *Buffer) RemoveBefore() {
 		return
 	}
 
-	char := buffer.Data[buffer.GapStart-1]
+	char := buffer.getPrevCharacter()
 	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.GapStart -= 1
 
@@ -79,7 +79,7 @@ func (buffer *Buffer) RemoveAfter() {
 }
 
 func (buffer *Buffer) MoveLeft() {
-	if buffer.GapStart == 0 || buffer.Data[buffer.GapStart-1] == '\n' {
+	if buffer.GapStart == 0 || buffer.getPrevCharacter() == '\n' {
 		return
 	}
 
@@ -87,7 +87,7 @@ func (buffer *Buffer) MoveLeft() {
 }
 
 func (buffer *Buffer) MoveRight() {
-	if buffer.GapEnd == len(buffer.Data)-1 || buffer.Data[buffer.GapEnd+1] == '\n' {
+	if buffer.GapEnd == len(buffer.Data)-1 || buffer.getNextCharacter() == '\n' {
 		return
 	}
 
@@ -104,10 +104,14 @@ func (buffer *Buffer) MoveUp() {
 
 	if buffer.Cursor.Line > 0 {
 		buffer.moveLeftInternal() // Move over new line symbol
-		buffer.moveLeftInternal() // Move into the previous line to get its size correctly
+		// @TODO (!important) this is probably not needed, get rid of this
+		char := buffer.getPrevCharacter()
+		if char != 0 && char != '\n' {
+			buffer.moveLeftInternal() // Move into the previous line to get its size correctly, unless the line is empty
+		}
 
 		// @TODO (!important) do something better here
-		buffer.Cursor.Column = buffer.getCurrentLineSize() - 1
+		buffer.Cursor.Column = int32(Max(int(buffer.getCurrentLineSize()-1), 0))
 		buffer.Cursor.Line -= 1
 
 		for buffer.Cursor.Column > endColumn {
@@ -145,7 +149,7 @@ func (buffer *Buffer) MoveToStartOfLine() {
 }
 
 func (buffer *Buffer) MoveToEndOfLine() {
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.Data[buffer.GapEnd+1] != '\n' {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
 		buffer.MoveRight()
 	}
 }
@@ -180,8 +184,10 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 	for index, line := range text {
 		lineNumber := Abs(int(buffer.Cursor.Line) - index)
 		lineNumberColor := sdl.Color{R: 80, G: 80, B: 80, A: 255}
+		lineNumberOffset := 0
 		if lineNumber == 0 {
 			lineNumber = index + 1
+			lineNumberOffset = 10
 			lineNumberColor.R = 150
 			lineNumberColor.G = 150
 			lineNumberColor.B = 150
@@ -191,7 +197,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		width, height := GetStringSize(font, lineNumberStr)
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
-			X: 10,
+			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
 			Y: 10 + int32(index)*height,
 			W: width,
 			H: height,
@@ -233,7 +239,7 @@ func (buffer *Buffer) expand() {
 }
 
 func (buffer *Buffer) moveLeftInternal() {
-	char := buffer.Data[buffer.GapStart-1]
+	char := buffer.getPrevCharacter()
 	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.Data[buffer.GapEnd] = char
 
@@ -244,7 +250,7 @@ func (buffer *Buffer) moveLeftInternal() {
 }
 
 func (buffer *Buffer) moveRightInternal() {
-	char := buffer.Data[buffer.GapEnd+1]
+	char := buffer.getNextCharacter()
 	buffer.Data[buffer.GapEnd+1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.Data[buffer.GapStart] = char
 
@@ -254,21 +260,34 @@ func (buffer *Buffer) moveRightInternal() {
 	buffer.Cursor.Column += 1
 }
 
-func (buffer *Buffer) getCurrentLineSize() int32 {
-	// @TODO (!important) can use one size variable here
-	var preSize int32
+func (buffer *Buffer) getCurrentLineSize() (result int32) {
 	preIndex := buffer.GapStart - 1
 	for preIndex >= 0 && buffer.Data[preIndex] != '\n' {
-		preSize += 1
+		result += 1
 		preIndex -= 1
 	}
 
-	var postSize int32
 	postIndex := buffer.GapEnd + 1
 	for postIndex != len(buffer.Data) && buffer.Data[postIndex] != '\n' {
-		postSize += 1
+		result += 1
 		postIndex += 1
 	}
 
-	return preSize + postSize
+	return result
+}
+
+func (buffer *Buffer) getPrevCharacter() byte {
+	if buffer.GapStart == 0 {
+		return 0
+	}
+
+	return buffer.Data[buffer.GapStart-1]
+}
+
+func (buffer *Buffer) getNextCharacter() byte {
+	if buffer.GapEnd == len(buffer.Data)-1 {
+		return 0
+	}
+
+	return buffer.Data[buffer.GapEnd+1]
 }

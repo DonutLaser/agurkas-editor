@@ -32,7 +32,7 @@ func Init() (result App) {
 	result.LineHeight = 16
 
 	result.Mode = Mode_Normal
-	result.Buffer = CreateBuffer(result.Font, result.LineHeight)
+	result.Buffer = CreateBuffer(result.LineHeight, GetCharacterWidth(result.Font))
 
 	return
 }
