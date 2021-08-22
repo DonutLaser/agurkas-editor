@@ -230,6 +230,7 @@ func (buffer *Buffer) MoveToEndOfLine() {
 	}
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToBufferEnd() {
 	for buffer.GapEnd < len(buffer.Data)-1 {
 		buffer.MoveDown()

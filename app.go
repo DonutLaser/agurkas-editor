@@ -56,7 +56,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
-	// @TODO (!important) G (goto file end)
 	// @TODO (!important) gg and gd and ga and gv (goto)
 	// @TODO (!important) b and B (move word back)
 	// @TODO (!important) cc and C and ck and cj (change)
