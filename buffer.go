@@ -52,6 +52,17 @@ func (buffer *Buffer) Insert(char byte) {
 	}
 }
 
+func (buffer *Buffer) InsertNewLineBelow() {
+	buffer.MoveToEndOfLine()
+	buffer.Insert('\n')
+}
+
+func (buffer *Buffer) InsertNewLineAbove() {
+	buffer.MoveToStartOfLine()
+	buffer.Insert('\n')
+	buffer.MoveUp()
+}
+
 func (buffer *Buffer) RemoveBefore() {
 	if buffer.GapStart == 0 {
 		return
@@ -142,12 +153,14 @@ func (buffer *Buffer) MoveDown() {
 	}
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToStartOfLine() {
 	for buffer.Cursor.Column > 0 {
 		buffer.MoveLeft()
 	}
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToEndOfLine() {
 	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
 		buffer.MoveRight()

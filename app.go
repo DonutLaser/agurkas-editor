@@ -76,6 +76,12 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveToStartOfLine()
 	case "$":
 		app.Buffer.MoveToEndOfLine()
+	case "o":
+		app.Buffer.InsertNewLineBelow()
+		app.Mode = Mode_Insert
+	case "O":
+		app.Buffer.InsertNewLineAbove()
+		app.Mode = Mode_Insert
 	}
 }
 
