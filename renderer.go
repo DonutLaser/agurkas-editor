@@ -22,13 +22,13 @@ func GetStringSize(font *ttf.Font, text string) (int32, int32) {
 func DrawText(renderer *sdl.Renderer, font *ttf.Font, text string, rect *sdl.Rect, color sdl.Color) {
 	surface, err := font.RenderUTF8Blended(text, color)
 	checkError(err)
+	defer surface.Free()
 
 	texture, err := renderer.CreateTextureFromSurface(surface)
 	checkError(err)
+	defer texture.Destroy()
 
 	renderer.Copy(texture, nil, rect)
-
-	surface.Free()
 }
 
 func DrawRect(renderer *sdl.Renderer, rect *sdl.Rect, color sdl.Color) {
