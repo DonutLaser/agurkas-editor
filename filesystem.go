@@ -10,7 +10,7 @@ import (
 
 func SaveFile(path string, data []string) (string, bool) {
 	if path == "" {
-		newPath, err := dialog.File().Filter("Text file", "txt").Save()
+		newPath, err := dialog.File().Filter("All files (*.*)", "*").Filter("Text file (*.txt)", "txt").Filter("Go file (*.go)", "go").Save()
 		if err != dialog.ErrCancelled {
 			checkError(err)
 		} else {
@@ -34,7 +34,7 @@ func SaveFile(path string, data []string) (string, bool) {
 
 func OpenFile(path string) ([]byte, string, bool) {
 	if path == "" {
-		newPath, err := dialog.File().Filter("Text file", "txt").Load()
+		newPath, err := dialog.File().Filter("All files (*.*)", "*").Filter("Text file (*.txt)", "txt").Filter("Go file (*.go)", "go").Load()
 		if err != dialog.ErrCancelled {
 			checkError(err)
 		} else {

@@ -242,6 +242,7 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 }
 
 func (app *App) Tick(input Input) {
+	// @TODO (!important) ctrl + shift + o command
 	switch app.Mode {
 	case Mode_Normal:
 		app.handleInputNormal(input)

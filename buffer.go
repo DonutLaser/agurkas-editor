@@ -1,14 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
-
-// @TODO (!important) write tests for this
 
 type Direction uint8
 
@@ -53,7 +52,9 @@ func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 
 // @TODO (!important) write tests for this
 func (buffer *Buffer) SetData(data []byte, filepath string) {
-	buffer.Data = make([]byte, len(data)+16) // 16 symbols for the gap
+	cleaned := cleanText(data)
+
+	buffer.Data = make([]byte, len(cleaned)+16) // 16 symbols for the gap
 	buffer.GapStart = 0
 	buffer.GapEnd = 15
 	buffer.BookmarkLine = 0
@@ -63,7 +64,12 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 	buffer.Cursor.Line = 0
 
 	for i := 16; i < len(buffer.Data); i += 1 {
-		buffer.Data[i] = data[i-16]
+		buffer.Data[i] = cleaned[i-16]
+	}
+
+	txt := buffer.GetText()
+	for _, line := range txt {
+		fmt.Println(len(line))
 	}
 }
 
@@ -431,6 +437,27 @@ func (buffer *Buffer) getCurrentLineSize() (result int32) {
 	}
 
 	return result
+}
+
+func cleanText(data []byte) (result []byte) {
+	for _, b := range data {
+		if b == 13 { // Remove \r symbol
+			continue
+		}
+
+		// @TODO (!important) temporary, should correctly handle tabs
+		if b == 9 { // Turn tabs into spaces
+			for i := 0; i < 4; i += 1 {
+				result = append(result, 32)
+			}
+
+			continue
+		}
+
+		result = append(result, b)
+	}
+
+	return
 }
 
 func (buffer *Buffer) getPrevCharacter() byte {
