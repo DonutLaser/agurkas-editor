@@ -124,11 +124,8 @@ func keyToCharacter(key sdl.Keycode, mod uint16) byte {
 	return 0
 }
 
-func SetWindowTitle(title string) {
-
-}
-
 func main() {
+	// @TODO (!important) is it normal for the app to use 20MB of memory with 20 line file open
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	checkError(err)
 	defer sdl.Quit()
