@@ -56,7 +56,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
-	// @TODO (!important) gg and gd and ga and gv (goto)
+	// @TODO (!important) gg and gd and ga and gv and gh (goto)
 	// @TODO (!important) b and B (move word back)
 	// @TODO (!important) cc and C and ck and cj (change)
 
@@ -70,10 +70,23 @@ func (app *App) handleInputNormal(input Input) {
 		return
 	}
 
-	if input.Ctrl && input.TypedCharacter == 's' && app.Buffer.Dirty {
-		success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
-		if success {
-			app.Buffer.Dirty = false
+	if input.Ctrl {
+		if input.TypedCharacter == 's' && app.Buffer.Dirty {
+			success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+			if success {
+				app.Buffer.Dirty = false
+			}
+
+			return
+		}
+
+		if input.TypedCharacter == 'o' {
+			data, filepath, success := OpenFile("")
+			if success {
+				app.Buffer.SetData(data, filepath)
+			}
+
+			return
 		}
 	}
 

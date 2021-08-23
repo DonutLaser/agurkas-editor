@@ -51,6 +51,22 @@ func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 	return result
 }
 
+// @TODO (!important) write tests for this
+func (buffer *Buffer) SetData(data []byte, filepath string) {
+	buffer.Data = make([]byte, len(data)+16) // 16 symbols for the gap
+	buffer.GapStart = 0
+	buffer.GapEnd = 15
+	buffer.BookmarkLine = 0
+	buffer.Filepath = filepath
+	buffer.Dirty = false
+	buffer.Cursor.Column = 0
+	buffer.Cursor.Line = 0
+
+	for i := 16; i < len(buffer.Data); i += 1 {
+		buffer.Data[i] = data[i-16]
+	}
+}
+
 func (buffer *Buffer) Insert(char byte) {
 	buffer.Data[buffer.GapStart] = char
 	buffer.GapStart += 1
