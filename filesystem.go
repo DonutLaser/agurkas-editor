@@ -8,13 +8,13 @@ import (
 	"github.com/sqweek/dialog"
 )
 
-func SaveFile(path string, data []string) bool {
+func SaveFile(path string, data []string) (string, bool) {
 	if path == "" {
 		newPath, err := dialog.File().Filter("Text file", "txt").Save()
 		if err != dialog.ErrCancelled {
 			checkError(err)
 		} else {
-			return false
+			return "", false
 		}
 
 		path = newPath
@@ -22,14 +22,14 @@ func SaveFile(path string, data []string) bool {
 
 	file, err := os.Create(path)
 	if err != nil {
-		return false
+		return "", false
 	}
 	defer file.Close()
 
 	file.WriteString(strings.Join(data, "\n"))
 	file.Sync()
 
-	return true
+	return path, true
 }
 
 func OpenFile(path string) ([]byte, string, bool) {
@@ -45,7 +45,9 @@ func OpenFile(path string) ([]byte, string, bool) {
 	}
 
 	data, err := ioutil.ReadFile(path)
-	checkError(err)
+	if err != nil {
+		return make([]byte, 0), "", false
+	}
 
 	return data, path, true
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -122,6 +124,10 @@ func keyToCharacter(key sdl.Keycode, mod uint16) byte {
 	return 0
 }
 
+func SetWindowTitle(title string) {
+
+}
+
 func main() {
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	checkError(err)
@@ -131,7 +137,7 @@ func main() {
 	checkError(err)
 	defer ttf.Quit()
 
-	window, err := sdl.CreateWindow("Agurkas", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_RESIZABLE)
+	window, err := sdl.CreateWindow("Agurkas - untitled", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_RESIZABLE)
 	checkError(err)
 	defer window.Destroy()
 
@@ -144,6 +150,10 @@ func main() {
 	defer font.Close()
 
 	app := Init()
+	app.PlatformApi.SetWindowTitle = func(title string) {
+		window.SetTitle(fmt.Sprintf("Agurkas - %s", title))
+	}
+
 	input := Input{}
 
 	running := true

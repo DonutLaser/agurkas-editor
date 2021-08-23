@@ -22,7 +22,13 @@ const (
 	Submode_None    Submode = "None"
 )
 
+type PlatformApi struct {
+	SetWindowTitle func(string)
+}
+
 type App struct {
+	PlatformApi PlatformApi
+
 	Font       *ttf.Font
 	LineHeight int32
 
@@ -72,9 +78,11 @@ func (app *App) handleInputNormal(input Input) {
 
 	if input.Ctrl {
 		if input.TypedCharacter == 's' && app.Buffer.Dirty {
-			success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
 			if success {
+				app.Buffer.Filepath = filepath
 				app.Buffer.Dirty = false
+				app.PlatformApi.SetWindowTitle(filepath)
 			}
 
 			return
@@ -84,6 +92,7 @@ func (app *App) handleInputNormal(input Input) {
 			data, filepath, success := OpenFile("")
 			if success {
 				app.Buffer.SetData(data, filepath)
+				app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
 			}
 
 			return
