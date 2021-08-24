@@ -195,7 +195,7 @@ func main() {
 
 		app.Tick(input)
 
-		renderer.SetDrawColor(0, 0, 0, 255)
+		renderer.SetDrawColor(20, 21, 24, 255)
 		renderer.Clear()
 
 		windowWidth, windowHeight := window.GetSize()

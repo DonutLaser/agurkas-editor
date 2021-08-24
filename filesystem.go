@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sqweek/dialog"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 func SaveFile(path string, data []string) (string, bool) {
@@ -50,4 +51,11 @@ func OpenFile(path string) ([]byte, string, bool) {
 	}
 
 	return data, path, true
+}
+
+func LoadFont(name string, size int) *ttf.Font {
+	font, err := ttf.OpenFont(name, size)
+	checkError(err)
+
+	return font
 }

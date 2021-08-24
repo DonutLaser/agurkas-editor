@@ -29,8 +29,11 @@ type PlatformApi struct {
 type App struct {
 	PlatformApi PlatformApi
 
-	Font       *ttf.Font
-	LineHeight int32
+	RegularFont16 *ttf.Font
+	RegularFont14 *ttf.Font
+	BoldFont16    *ttf.Font
+	BoldFont14    *ttf.Font
+	LineHeight    int32
 
 	Buffer Buffer
 
@@ -41,14 +44,15 @@ type App struct {
 func Init() (result App) {
 	result = App{}
 
-	font, err := ttf.OpenFont("consola.ttf", 16)
-	checkError(err)
-	result.Font = font
+	result.RegularFont16 = LoadFont("consola.ttf", 16)
+	result.RegularFont14 = LoadFont("consola.ttf", 14)
+	result.BoldFont16 = LoadFont("consolab.ttf", 16)
+	result.BoldFont14 = LoadFont("consolab.ttf", 14)
 	result.LineHeight = 16
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
-	result.Buffer = CreateBuffer(result.LineHeight, GetCharacterWidth(result.Font))
+	result.Buffer = CreateBuffer(result.LineHeight, GetCharacterWidth(result.RegularFont14))
 
 	return
 }
@@ -210,34 +214,34 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 }
 
 func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
-	app.Buffer.Render(renderer, app.Font, app.Mode, windowHeight)
+	app.Buffer.Render(renderer, app.RegularFont14, app.Mode, windowHeight)
 
 	statusBarRect := sdl.Rect{
 		X: 0,
-		Y: windowHeight - 32,
+		Y: windowHeight - 26,
 		W: windowWidth,
-		H: 32,
+		H: 26,
 	}
-	DrawRect(renderer, &statusBarRect, sdl.Color{R: 20, G: 20, B: 20, A: 255})
+	DrawRect(renderer, &statusBarRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
 
-	statusWidth, statusHeight := GetStringSize(app.Font, string(app.Mode))
+	statusWidth, statusHeight := GetStringSize(app.BoldFont16, string(app.Mode))
 	statusRect := sdl.Rect{
 		X: 10,
 		Y: statusBarRect.Y + (statusBarRect.H-statusHeight)/2,
 		W: statusWidth,
 		H: statusHeight,
 	}
-	DrawText(renderer, app.Font, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	DrawText(renderer, app.BoldFont16, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 
 	if app.Submode != Submode_None {
-		submodeWidth, submodeHeight := GetStringSize(app.Font, string(app.Submode))
+		submodeWidth, submodeHeight := GetStringSize(app.RegularFont16, string(app.Submode))
 		submodeRect := sdl.Rect{
 			X: 10 + statusRect.W + 10,
 			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
 			W: submodeWidth,
 			H: submodeHeight,
 		}
-		DrawText(renderer, app.Font, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		DrawText(renderer, app.RegularFont16, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 	}
 }
 
@@ -252,5 +256,8 @@ func (app *App) Tick(input Input) {
 }
 
 func (app *App) Close() {
-	app.Font.Close()
+	app.RegularFont14.Close()
+	app.RegularFont16.Close()
+	app.BoldFont14.Close()
+	app.BoldFont16.Close()
 }

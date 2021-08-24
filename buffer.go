@@ -339,21 +339,21 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		W: 48,
 		H: screenHeight,
 	}
-	DrawRect(renderer, &gutterRect, sdl.Color{R: 10, G: 10, B: 10, A: 10})
+	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 
 	buffer.Cursor.Render(renderer, mode, buffer.CharacterWidth, gutterRect.W)
 
 	text := buffer.GetText()
 	for index, line := range text {
 		lineNumber := Abs(int(buffer.Cursor.Line) - index)
-		lineNumberColor := sdl.Color{R: 80, G: 80, B: 80, A: 255}
+		lineNumberColor := sdl.Color{R: 137, G: 145, B: 162, A: 255}
 		lineNumberOffset := 0
 		if lineNumber == 0 {
 			lineNumber = index + 1
 			lineNumberOffset = 10
-			lineNumberColor.R = 150
-			lineNumberColor.G = 150
-			lineNumberColor.B = 150
+			lineNumberColor.R = 245
+			lineNumberColor.G = 213
+			lineNumberColor.B = 71
 		}
 
 		lineNumberStr := strconv.Itoa(lineNumber)
