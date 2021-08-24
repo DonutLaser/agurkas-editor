@@ -10,7 +10,7 @@ type Cursor struct {
 	Height      int32
 }
 
-func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, characterWidth int32, gutterWidth int32) {
+func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, characterWidth int32, gutterWidth int32, lineSpacing int32) {
 	width := cursor.WidthNormal
 	if mode != Mode_Normal {
 		width = cursor.WidthInsert
@@ -18,7 +18,7 @@ func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, characterWidth i
 
 	cursorRect := sdl.Rect{
 		X: gutterWidth + 5 + cursor.Column*characterWidth,
-		Y: 5 + cursor.Line*cursor.Height,
+		Y: 5 + cursor.Line*cursor.Height + cursor.Line*lineSpacing,
 		W: width,
 		H: cursor.Height,
 	}

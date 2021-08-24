@@ -48,7 +48,7 @@ func Init() (result App) {
 	result.RegularFont14 = LoadFont("consola.ttf", 14)
 	result.BoldFont16 = LoadFont("consolab.ttf", 16)
 	result.BoldFont14 = LoadFont("consolab.ttf", 14)
-	result.LineHeight = 16
+	result.LineHeight = 14
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None

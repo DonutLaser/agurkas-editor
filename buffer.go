@@ -22,6 +22,7 @@ type Buffer struct {
 	GapEnd   int
 
 	CharacterWidth int32
+	LineSpacing    int32
 
 	Cursor Cursor
 
@@ -37,6 +38,7 @@ func CreateBuffer(lineHeight int32, characterWidth int32) Buffer {
 		GapStart:       0,
 		GapEnd:         15,
 		CharacterWidth: characterWidth,
+		LineSpacing:    2,
 		Cursor: Cursor{
 			WidthNormal: 8,
 			WidthInsert: 2,
@@ -341,7 +343,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 	}
 	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 
-	buffer.Cursor.Render(renderer, mode, buffer.CharacterWidth, gutterRect.W)
+	buffer.Cursor.Render(renderer, mode, buffer.CharacterWidth, gutterRect.W, buffer.LineSpacing)
 
 	text := buffer.GetText()
 	for index, line := range text {
@@ -361,7 +363,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
 			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-			Y: 5 + int32(index)*height,
+			Y: 5 + int32(index)*height + int32(index)*buffer.LineSpacing,
 			W: width,
 			H: height,
 		}
@@ -374,7 +376,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		width, height = GetStringSize(font, line)
 		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 			X: gutterRect.W + 5,
-			Y: 5 + int32(index)*height,
+			Y: 5 + int32(index)*height + int32(index)*buffer.LineSpacing,
 			W: width,
 			H: height,
 		}
