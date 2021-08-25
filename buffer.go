@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 )
 
 type Direction uint8
@@ -21,8 +20,8 @@ type Buffer struct {
 	GapStart int
 	GapEnd   int
 
-	CharacterWidth int32
-	LineSpacing    int32
+	Font        *Font
+	LineSpacing int32
 
 	Cursor Cursor
 
@@ -32,17 +31,18 @@ type Buffer struct {
 	Dirty    bool
 }
 
-func CreateBuffer(lineHeight int32, characterWidth int32, fontSize int32) Buffer {
+func CreateBuffer(lineHeight int32, font *Font) Buffer {
 	result := Buffer{
-		Data:           make([]byte, 16),
-		GapStart:       0,
-		GapEnd:         15,
-		CharacterWidth: characterWidth,
-		LineSpacing:    (lineHeight - fontSize) / 2,
+		Data:        make([]byte, 16),
+		GapStart:    0,
+		GapEnd:      15,
+		Font:        font,
+		LineSpacing: (lineHeight - int32(font.Size)) / 2,
 		Cursor: Cursor{
 			WidthNormal: 8,
 			WidthInsert: 2,
 			Height:      lineHeight,
+			Advance:     int32(font.CharacterWidth),
 		},
 		BookmarkLine: 0,
 		Filepath:     "",
@@ -334,16 +334,16 @@ func (buffer *Buffer) GetText() []string {
 	return strings.Split(sb.String(), "\n")
 }
 
-func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, screenHeight int32, screenWidth int32) {
+func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.Color, window *sdl.Rect) {
 	gutterRect := sdl.Rect{
 		X: 0,
 		Y: 0,
 		W: 48,
-		H: screenHeight,
+		H: window.H,
 	}
 	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 
-	buffer.Cursor.Render(renderer, mode, buffer.CharacterWidth, gutterRect.W, screenWidth)
+	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, window.W)
 
 	text := buffer.GetText()
 	for index, line := range text {
@@ -353,9 +353,12 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		if lineNumber == 0 {
 			lineNumber = index + 1
 			lineNumberOffset = 10
-			lineNumberColor.R = 245
-			lineNumberColor.G = 213
-			lineNumberColor.B = 71
+			lineNumberColor.R = cursorColor.R
+			lineNumberColor.G = cursorColor.G
+			lineNumberColor.B = cursorColor.B
+			// lineNumberColor.R = 245
+			// lineNumberColor.G = 213
+			// lineNumberColor.B = 71
 
 			numberHighlightRect := sdl.Rect{
 				X: gutterRect.X,
@@ -367,7 +370,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 		}
 
 		lineNumberStr := strconv.Itoa(lineNumber)
-		width, height := GetStringSize(font, lineNumberStr)
+		width, height := buffer.Font.GetStringSize(lineNumberStr)
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
 			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
@@ -375,13 +378,13 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 			W: width,
 			H: height,
 		}
-		DrawText(renderer, font, lineNumberStr, &lineNumberRect, lineNumberColor)
+		DrawText(renderer, buffer.Font, lineNumberStr, &lineNumberRect, lineNumberColor)
 
 		if len(line) == 0 {
 			continue
 		}
 
-		width, height = GetStringSize(font, line)
+		width, height = buffer.Font.GetStringSize(line)
 		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 			X: gutterRect.W + 5,
 			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing,
@@ -389,7 +392,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, font *ttf.Font, mode Mode, 
 			H: height,
 		}
 
-		DrawText(renderer, font, line, &rect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		DrawText(renderer, buffer.Font, line, &rect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 	}
 }
 

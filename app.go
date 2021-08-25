@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 )
 
 type Mode string
@@ -29,8 +28,8 @@ type PlatformApi struct {
 type App struct {
 	PlatformApi PlatformApi
 
-	RegularFont14 *ttf.Font
-	BoldFont14    *ttf.Font
+	RegularFont14 Font
+	BoldFont14    Font
 
 	ColorMap map[Mode]sdl.Color
 
@@ -58,7 +57,7 @@ func Init() (result App) {
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
-	result.Buffer = CreateBuffer(result.LineHeight, GetCharacterWidth(result.RegularFont14), 14)
+	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14)
 
 	return
 }
@@ -220,7 +219,8 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 }
 
 func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
-	app.Buffer.Render(renderer, app.RegularFont14, app.Mode, windowHeight, windowWidth)
+	window := sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
+	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode], &window)
 
 	statusBarRect := sdl.Rect{
 		X: 0,
@@ -230,7 +230,7 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 	}
 	DrawRect(renderer, &statusBarRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
 
-	statusWidth, statusHeight := GetStringSize(app.BoldFont14, string(app.Mode))
+	statusWidth, statusHeight := app.BoldFont14.GetStringSize(string(app.Mode))
 	statusBgRect := sdl.Rect{
 		X: 0,
 		Y: statusBarRect.Y,
@@ -244,17 +244,17 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 		W: statusWidth,
 		H: statusHeight,
 	}
-	DrawText(renderer, app.BoldFont14, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	DrawText(renderer, &app.BoldFont14, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 
 	if app.Submode != Submode_None {
-		submodeWidth, submodeHeight := GetStringSize(app.RegularFont14, string(app.Submode))
+		submodeWidth, submodeHeight := app.RegularFont14.GetStringSize(string(app.Submode))
 		submodeRect := sdl.Rect{
 			X: 10 + statusRect.W + 10,
 			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
 			W: submodeWidth,
 			H: submodeHeight,
 		}
-		DrawText(renderer, app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		DrawText(renderer, &app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 	}
 }
 
@@ -269,6 +269,6 @@ func (app *App) Tick(input Input) {
 }
 
 func (app *App) Close() {
-	app.RegularFont14.Close()
-	app.BoldFont14.Close()
+	app.RegularFont14.Unload()
+	app.BoldFont14.Unload()
 }
