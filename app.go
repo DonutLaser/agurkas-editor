@@ -15,10 +15,10 @@ const (
 )
 
 const (
-	Submode_Replace Submode = "Replace"
-	Submode_Delete  Submode = "Delete"
-	Submode_Goto    Submode = "Goto"
-	Submode_None    Submode = "None"
+	Submode_Replace Submode = "replace"
+	Submode_Delete  Submode = "delete"
+	Submode_Goto    Submode = "goto"
+	Submode_None    Submode = "none"
 )
 
 type PlatformApi struct {
@@ -31,7 +31,8 @@ type App struct {
 	RegularFont14 Font
 	BoldFont14    Font
 
-	ColorMap map[Mode]sdl.Color
+	ColorMap          map[Mode]sdl.Color
+	StatusBarTriangle Image
 
 	LineHeight int32
 
@@ -41,12 +42,14 @@ type App struct {
 	Submode Submode
 }
 
-func Init() (result App) {
+// @TODO is there a way to avoid passing a renderer here?
+func Init(renderer *sdl.Renderer) (result App) {
 	result = App{}
 
-	result.RegularFont14 = LoadFont("consola.ttf", 14)
-	result.BoldFont14 = LoadFont("consolab.ttf", 14)
+	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
+	result.BoldFont14 = LoadFont("./assets/fonts/consolab.ttf", 14)
 
+	result.StatusBarTriangle = LoadImage("./assets/images/status_bar_triangle.png", renderer)
 	result.ColorMap = make(map[Mode]sdl.Color)
 	result.ColorMap[Mode_Normal] = sdl.Color{R: 90, G: 169, B: 230, A: 255}
 	result.ColorMap[Mode_Insert] = sdl.Color{R: 213, G: 41, B: 65, A: 255}
@@ -245,11 +248,12 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 		H: statusHeight,
 	}
 	DrawText(renderer, &app.BoldFont14, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	app.StatusBarTriangle.Render(renderer, sdl.Point{X: statusBgRect.X + statusBgRect.W, Y: statusBgRect.Y}, app.ColorMap[app.Mode])
 
 	if app.Submode != Submode_None {
 		submodeWidth, submodeHeight := app.RegularFont14.GetStringSize(string(app.Submode))
 		submodeRect := sdl.Rect{
-			X: 10 + statusRect.W + 10,
+			X: statusBgRect.X + statusBgRect.W + app.StatusBarTriangle.Width + 5,
 			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
 			W: submodeWidth,
 			H: submodeHeight,

@@ -142,11 +142,7 @@ func main() {
 	checkError(err)
 	defer renderer.Destroy()
 
-	font, err := ttf.OpenFont("consola.ttf", 16)
-	checkError(err)
-	defer font.Close()
-
-	app := Init()
+	app := Init(renderer)
 	app.PlatformApi.SetWindowTitle = func(title string) {
 		window.SetTitle(fmt.Sprintf("Agurkas - %s", title))
 	}
