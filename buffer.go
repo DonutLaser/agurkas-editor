@@ -235,6 +235,7 @@ func (buffer *Buffer) ChangeCurrentLine() {
 
 func (buffer *Buffer) ChangeRemainingLine() {
 	buffer.RemoveRemainingLine()
+	buffer.Dirty = true
 }
 
 func (buffer *Buffer) MoveLeft() {
