@@ -20,6 +20,7 @@ func TestCreateBuffer(t *testing.T) {
 	FailIfFalse(len(result.Data) == 16, "Incorrect buffer size", t)
 	FailIfFalse(result.GapStart == 0, "Incorrect gap start", t)
 	FailIfFalse(result.GapEnd == 15, "Incorrect gap end", t)
+	FailIfFalse(result.TotalLines == 1, "Incorrect total lines", t)
 	FailIfFalse(result.Cursor.Column == 0, "Incorrect cursor column", t)
 	FailIfFalse(result.Cursor.Line == 0, "Incorrect cursor line", t)
 	FailIfFalse(result.Cursor.Height == 16, "Incorrect cursor height", t)
@@ -81,6 +82,7 @@ func TestInsert(t *testing.T) {
 		buffer.Insert('h')
 
 		FailIfFalse(buffer.Cursor.Line == 1, "Cursor line is not where it should be", t)
+		FailIfFalse(buffer.TotalLines == 2, "Total lines count is not correct", t)
 
 		result := buffer.GetText()
 		expected := []string{"abcd", "efgh"}
@@ -223,6 +225,7 @@ func TestRemoveBefore(t *testing.T) {
 
 		FailIfFalse(buffer.Cursor.Column == 4, "Cursor column is not where it should be", t)
 		FailIfFalse(buffer.Cursor.Line == 0, "Cursor line is not where it should be", t)
+		FailIfFalse(buffer.TotalLines == 1, "Total line count is not correct", t)
 
 		result := buffer.GetText()
 		FailNowIfFalse(len(result) == 1, "Incorrect line count received", t)
@@ -256,6 +259,26 @@ func TestRemoveAfter(t *testing.T) {
 		buffer.MoveLeft()
 		buffer.RemoveAfter()
 		buffer.RemoveAfter()
+
+		result := buffer.GetText()
+		FailNowIfFalse(len(result) == 1, "Incorrect line count received", t)
+		FailIfFalse(result[0] == "ad", "Incorrect resulting text", t)
+	})
+
+	t.Run("Remove new line", func(t *testing.T) {
+		fakeFont := GetFakeFont()
+		buffer := CreateBuffer(16, &fakeFont)
+		buffer.Insert('a')
+		buffer.Insert('b')
+		buffer.Insert('c')
+		buffer.Insert('\n')
+		buffer.Insert('d')
+		buffer.MoveUp()
+		buffer.RemoveAfter()
+		buffer.RemoveAfter()
+		buffer.RemoveAfter()
+
+		FailIfFalse(buffer.TotalLines == 1, "Total line count is not correct", t)
 
 		result := buffer.GetText()
 		FailNowIfFalse(len(result) == 1, "Incorrect line count received", t)
@@ -377,7 +400,7 @@ func TestMoveUp(t *testing.T) {
 		buffer.Insert('c')
 		buffer.MoveUp()
 
-		FailIfFalse(buffer.Cursor.Column == 0, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Column == 3, "Cursor column is not where it should be", t)
 
 		result := buffer.GetText()
 		FailNowIfFalse(len(result) == 1, "Incorrect line count received", t)
@@ -459,7 +482,7 @@ func TestMoveDown(t *testing.T) {
 		buffer.MoveLeft()
 		buffer.MoveDown()
 
-		FailIfFalse(buffer.Cursor.Column == 4, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Cursor.Column == 0, "Cursor column is not where it should be", t)
 		FailIfFalse(buffer.Cursor.Line == 1, "Cursor column is not where it should be", t)
 
 		result := buffer.GetText()
