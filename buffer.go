@@ -74,8 +74,19 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 }
 
 func (buffer *Buffer) Insert(char byte) {
-	buffer.Data[buffer.GapStart] = char
-	buffer.GapStart += 1
+	if char != '\t' {
+		buffer.Data[buffer.GapStart] = char
+		buffer.GapStart += 1
+	} else {
+		// @TODO (!important) write tests for this
+		count := 4 - buffer.Cursor.Column%4
+		// @TODO (!important) temporary, should correctly handle tabs
+		for i := 0; i < int(count); i += 1 {
+			buffer.Insert(' ')
+		}
+
+		return
+	}
 
 	if char == '\n' {
 		buffer.Cursor.Column = 0
