@@ -337,7 +337,7 @@ func (buffer *Buffer) MoveToBookmark() {
 }
 
 // @TODO (!important) write tests for this
-func (buffer *Buffer) MoveToWordStart(ignorePunctuation bool) {
+func (buffer *Buffer) MoveRightToWordStart(ignorePunctuation bool) {
 	if !ignorePunctuation {
 		for !buffer.isPunctuationCharacter(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
 			buffer.MoveRight()
@@ -349,6 +349,21 @@ func (buffer *Buffer) MoveToWordStart(ignorePunctuation bool) {
 	}
 
 	buffer.MoveRight()
+}
+
+// @TODO (!important) write tests for this
+func (buffer *Buffer) MoveLeftToWordStart(ignorePunctuation bool) {
+	buffer.MoveLeft()
+
+	if !ignorePunctuation {
+		for !buffer.isPunctuationCharacter(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+			buffer.MoveLeft()
+		}
+	} else {
+		for !buffer.isWhitespaceCharacter(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+			buffer.MoveLeft()
+		}
+	}
 }
 
 // @TODO (!important) write tests for this

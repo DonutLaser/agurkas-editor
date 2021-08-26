@@ -68,7 +68,6 @@ func Init(renderer *sdl.Renderer) (result App) {
 }
 
 func (app *App) handleInputNormal(input Input) {
-	// @TODO (!important) w and W (move word)
 	// @TODO (!important) e and E (move end word)
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
@@ -153,9 +152,13 @@ func (app *App) handleInputNormal(input Input) {
 	case '$':
 		app.Buffer.MoveToEndOfLine()
 	case 'w':
-		app.Buffer.MoveToWordStart(false) // Do not ignore punctuation
+		app.Buffer.MoveRightToWordStart(false) // Do not ignore punctuation
 	case 'W':
-		app.Buffer.MoveToWordStart(true) // Ignore puctuation
+		app.Buffer.MoveRightToWordStart(true) // Ignore puctuation
+	case 'b':
+		app.Buffer.MoveLeftToWordStart(false) // Do not ignore punctuation
+	case 'B':
+		app.Buffer.MoveLeftToWordStart(true) // Ignore punctuation
 	case 'g':
 		app.Submode = Submode_Goto
 	case 'G':
