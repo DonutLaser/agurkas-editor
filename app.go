@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -260,6 +262,16 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 		}
 		DrawText(renderer, &app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 	}
+
+	linesStatus := fmt.Sprintf("Lines: %d", app.Buffer.TotalLines)
+	linesWidth, linesHeight := app.RegularFont14.GetStringSize(linesStatus)
+	linesRect := sdl.Rect{
+		X: window.W - 8 - linesWidth,
+		Y: statusBarRect.Y + (statusBarRect.H-linesHeight)/2,
+		W: linesWidth,
+		H: linesHeight,
+	}
+	DrawText(renderer, &app.RegularFont14, linesStatus, &linesRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 }
 
 func (app *App) Tick(input Input) {

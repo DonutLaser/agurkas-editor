@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,9 +15,10 @@ const (
 )
 
 type Buffer struct {
-	Data     []byte
-	GapStart int
-	GapEnd   int
+	Data       []byte
+	GapStart   int
+	GapEnd     int
+	TotalLines int
 
 	Font        *Font
 	LineSpacing int32
@@ -36,6 +36,7 @@ func CreateBuffer(lineHeight int32, font *Font) Buffer {
 		Data:        make([]byte, 16),
 		GapStart:    0,
 		GapEnd:      15,
+		TotalLines:  1,
 		Font:        font,
 		LineSpacing: (lineHeight - int32(font.Size)) / 2,
 		Cursor: Cursor{
@@ -69,10 +70,7 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 		buffer.Data[i] = cleaned[i-16]
 	}
 
-	txt := buffer.GetText()
-	for _, line := range txt {
-		fmt.Println(len(line))
-	}
+	buffer.TotalLines = len(buffer.GetText())
 }
 
 func (buffer *Buffer) Insert(char byte) {
@@ -82,6 +80,7 @@ func (buffer *Buffer) Insert(char byte) {
 	if char == '\n' {
 		buffer.Cursor.Column = 0
 		buffer.Cursor.Line += 1
+		buffer.TotalLines += 1
 	} else {
 		buffer.Cursor.Column += 1
 	}
@@ -104,6 +103,7 @@ func (buffer *Buffer) ReplaceCurrentCharacter(char byte) {
 	buffer.Dirty = true
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) InsertNewLineBelow() {
 	buffer.MoveToEndOfLine()
 	buffer.Insert('\n')
@@ -111,6 +111,7 @@ func (buffer *Buffer) InsertNewLineBelow() {
 	buffer.Dirty = true
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) InsertNewLineAbove() {
 	buffer.MoveToStartOfLine()
 	buffer.Insert('\n')
@@ -131,6 +132,7 @@ func (buffer *Buffer) RemoveBefore() {
 	if char == '\n' {
 		buffer.Cursor.Line -= 1
 		buffer.Cursor.Column = buffer.getCurrentLineSize()
+		buffer.TotalLines -= 1
 	} else {
 		buffer.Cursor.Column -= 1
 	}
@@ -143,6 +145,10 @@ func (buffer *Buffer) RemoveAfter() {
 		return
 	}
 
+	if buffer.getNextCharacter() == '\n' {
+		buffer.TotalLines -= 1
+	}
+
 	buffer.Data[buffer.GapEnd] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.GapEnd += 1
 
@@ -151,14 +157,19 @@ func (buffer *Buffer) RemoveAfter() {
 
 // @TODO (!important) write tests for this
 func (buffer *Buffer) RemoveCurrentLine() {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
+		buffer.RemoveAfter()
+	}
+	buffer.RemoveAfter() // Remove new line
+
 	for buffer.Cursor.Column > 0 {
 		buffer.RemoveBefore()
 	}
 
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.Data[buffer.GapEnd+1] != '\n' {
-		buffer.RemoveAfter()
+	// If we are removing the last line, remove it completely and just to the next llne
+	if buffer.GapEnd == len(buffer.Data)-1 {
+		buffer.RemoveBefore()
 	}
-	buffer.RemoveAfter()
 
 	buffer.Dirty = true
 }
@@ -219,6 +230,10 @@ func (buffer *Buffer) MoveUp() {
 	// @TODO (!important) remember column
 	endColumn := buffer.Cursor.Column
 
+	if buffer.Cursor.Line == 0 {
+		return
+	}
+
 	for buffer.Cursor.Column > 0 {
 		buffer.moveLeftInternal()
 	}
@@ -243,6 +258,10 @@ func (buffer *Buffer) MoveUp() {
 
 func (buffer *Buffer) MoveDown() {
 	// @TODO (!important) remember column
+	if buffer.Cursor.Line == int32(buffer.TotalLines)-1 {
+		return
+	}
+
 	endColumn := buffer.Cursor.Column
 	lineSize := buffer.getCurrentLineSize() // @TODO (!important) this might not be needed, we can just check if the next symbol will be newline
 
