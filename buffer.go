@@ -177,7 +177,7 @@ func (buffer *Buffer) RemoveCurrentLine() {
 		buffer.RemoveBefore()
 	}
 
-	// If we are removing the last line, remove it completely and just to the next llne
+	// If we are removing the last line, remove it completely and jump to the next llne
 	if buffer.GapEnd == len(buffer.Data)-1 {
 		buffer.RemoveBefore()
 	}
@@ -219,6 +219,22 @@ func (buffer *Buffer) RemoveRemainingLine() {
 	}
 
 	buffer.Dirty = true
+}
+
+func (buffer *Buffer) ChangeCurrentLine() {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
+		buffer.RemoveAfter()
+	}
+
+	for buffer.Cursor.Column > 0 {
+		buffer.RemoveBefore()
+	}
+
+	buffer.Dirty = true
+}
+
+func (buffer *Buffer) ChangeRemainingLine() {
+	buffer.RemoveRemainingLine()
 }
 
 func (buffer *Buffer) MoveLeft() {

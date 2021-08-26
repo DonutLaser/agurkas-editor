@@ -20,6 +20,7 @@ const (
 	Submode_Replace Submode = "replace"
 	Submode_Delete  Submode = "delete"
 	Submode_Goto    Submode = "goto"
+	Submode_Change  Submode = "change"
 	Submode_None    Submode = "none"
 )
 
@@ -76,7 +77,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
-	// @TODO (!important) b and B (move word back)
 	// @TODO (!important) cc and C and ck and cj (change)
 
 	if app.Submode == Submode_Replace {
@@ -91,6 +91,11 @@ func (app *App) handleInputNormal(input Input) {
 
 	if app.Submode == Submode_Goto {
 		app.handleInputSubmodeGoto(input)
+		return
+	}
+
+	if app.Submode == Submode_Change {
+		app.handleInputSubmodeChange(input)
 		return
 	}
 
@@ -169,6 +174,11 @@ func (app *App) handleInputNormal(input Input) {
 		app.Submode = Submode_Replace
 	case 'd':
 		app.Submode = Submode_Delete
+	case 'c':
+		app.Submode = Submode_Change
+	case 'C':
+		app.Buffer.ChangeRemainingLine()
+		app.Mode = Mode_Insert
 	case 'm':
 		app.Buffer.MarkCurrentPosition()
 	case '`':
@@ -193,6 +203,23 @@ func (app *App) handleInputInsert(input Input) {
 
 	if input.Backspace {
 		app.Buffer.RemoveBefore()
+		return
+	}
+}
+
+func (app *App) handleInputSubmodeChange(input Input) {
+	if input.Ctrl || input.Alt {
+		return
+	}
+
+	if input.Escape {
+		app.Submode = Submode_None
+	}
+
+	if input.TypedCharacter == 'c' {
+		app.Buffer.ChangeCurrentLine()
+		app.Submode = Submode_None
+		app.Mode = Mode_Insert
 		return
 	}
 }
