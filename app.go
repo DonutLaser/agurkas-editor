@@ -77,7 +77,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
-	// @TODO (!important) cc and C and ck and cj (change)
+	// @TODO (!important) ck and cj (change)
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
