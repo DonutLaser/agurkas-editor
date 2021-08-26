@@ -90,6 +90,11 @@ func (app *App) handleInputNormal(input Input) {
 		return
 	}
 
+	if app.Submode == Submode_Goto {
+		app.handleInputSubmodeGoto(input)
+		return
+	}
+
 	if input.Ctrl {
 		if input.TypedCharacter == 's' && app.Buffer.Dirty {
 			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
@@ -147,6 +152,8 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveToStartOfLine()
 	case '$':
 		app.Buffer.MoveToEndOfLine()
+	case 'g':
+		app.Submode = Submode_Goto
 	case 'G':
 		app.Buffer.MoveToBufferEnd()
 	case 'J':
@@ -179,6 +186,23 @@ func (app *App) handleInputInsert(input Input) {
 
 	if input.Backspace {
 		app.Buffer.RemoveBefore()
+		return
+	}
+}
+
+func (app *App) handleInputSubmodeGoto(input Input) {
+	if input.Ctrl || input.Alt {
+		return
+	}
+
+	if input.Escape {
+		app.Submode = Submode_None
+		return
+	}
+
+	if input.TypedCharacter == 'g' {
+		app.Buffer.MoveToBufferStart()
+		app.Submode = Submode_None
 		return
 	}
 }

@@ -308,12 +308,20 @@ func (buffer *Buffer) MoveToEndOfLine() {
 }
 
 // @TODO (!important) write tests for this
+func (buffer *Buffer) MoveToBufferStart() {
+	for buffer.Cursor.Line > 0 {
+		buffer.MoveUp()
+	}
+}
+
+// @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToBufferEnd() {
-	for buffer.GapEnd < len(buffer.Data)-1 {
+	for buffer.Cursor.Line < int32(buffer.TotalLines)-1 {
 		buffer.MoveDown()
 	}
 }
 
+// @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToBookmark() {
 	if buffer.BookmarkLine < buffer.Cursor.Line {
 		for buffer.Cursor.Line != buffer.BookmarkLine {
