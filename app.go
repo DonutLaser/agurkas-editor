@@ -76,7 +76,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
-	// @TODO (!important) gg and gd and ga and gv and gh (goto)
+	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) b and B (move word back)
 	// @TODO (!important) cc and C and ck and cj (change)
 
@@ -152,6 +152,10 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveToStartOfLine()
 	case '$':
 		app.Buffer.MoveToEndOfLine()
+	case 'w':
+		app.Buffer.MoveToWordStart(false) // Do not ignore punctuation
+	case 'W':
+		app.Buffer.MoveToWordStart(true) // Ignore puctuation
 	case 'g':
 		app.Submode = Submode_Goto
 	case 'G':

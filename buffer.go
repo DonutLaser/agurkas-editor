@@ -337,6 +337,21 @@ func (buffer *Buffer) MoveToBookmark() {
 }
 
 // @TODO (!important) write tests for this
+func (buffer *Buffer) MoveToWordStart(ignorePunctuation bool) {
+	if !ignorePunctuation {
+		for !buffer.isPunctuationCharacter(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+			buffer.MoveRight()
+		}
+	} else {
+		for !buffer.isWhitespaceCharacter(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+			buffer.MoveRight()
+		}
+	}
+
+	buffer.MoveRight()
+}
+
+// @TODO (!important) write tests for this
 // @TODO (!important) improve: remove all white from the next line as well
 func (buffer *Buffer) MergeLineBelow() {
 	buffer.MoveToEndOfLine()
@@ -525,4 +540,12 @@ func (buffer *Buffer) getNextCharacter() byte {
 	}
 
 	return buffer.Data[buffer.GapEnd+1]
+}
+
+func (buffer *Buffer) isPunctuationCharacter(char byte) bool {
+	return (char >= 33 && char < 47) || (char >= 58 && char <= 64) || (char >= 91 && char <= 94) || char == '`' || (char >= 123 && char <= 126) || buffer.isWhitespaceCharacter(char)
+}
+
+func (buffer *Buffer) isWhitespaceCharacter(char byte) bool {
+	return char == '\n' || char == '\t' || char == ' '
 }
