@@ -15,11 +15,10 @@ const (
 )
 
 type Buffer struct {
-	Data          []byte
-	GapStart      int
-	GapEnd        int
-	TotalLines    int
-	ScrollOffsetY int
+	Data       []byte
+	GapStart   int
+	GapEnd     int
+	TotalLines int
 
 	Font        *Font
 	LineSpacing int32
@@ -442,6 +441,9 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 			lineNumberColor.R = cursorColor.R
 			lineNumberColor.G = cursorColor.G
 			lineNumberColor.B = cursorColor.B
+			// lineNumberColor.R = 245
+			// lineNumberColor.G = 213
+			// lineNumberColor.B = 71
 
 			numberHighlightRect := sdl.Rect{
 				X: gutterRect.X,

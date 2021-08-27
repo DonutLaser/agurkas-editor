@@ -34,8 +34,8 @@ type App struct {
 	RegularFont14 Font
 	BoldFont14    Font
 
-	ColorMap  map[Mode]sdl.Color
-	StatusBar StatusBar
+	ColorMap          map[Mode]sdl.Color
+	StatusBarTriangle Image
 
 	LineHeight int32
 
@@ -43,21 +43,16 @@ type App struct {
 
 	Mode    Mode
 	Submode Submode
-
-	Layout Layout
 }
 
 // @TODO is there a way to avoid passing a renderer here?
-func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result App) {
+func Init(renderer *sdl.Renderer) (result App) {
 	result = App{}
-
-	result.Layout = CreateLayout(sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight})
 
 	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
 	result.BoldFont14 = LoadFont("./assets/fonts/consolab.ttf", 14)
 
-	result.StatusBar = CreateStatusBar(result.Layout.ConsumeSpaceBottom(22), renderer)
-
+	result.StatusBarTriangle = LoadImage("./assets/images/status_bar_triangle.png", renderer)
 	result.ColorMap = make(map[Mode]sdl.Color)
 	result.ColorMap[Mode_Normal] = sdl.Color{R: 90, G: 169, B: 230, A: 255}
 	result.ColorMap[Mode_Insert] = sdl.Color{R: 213, G: 41, B: 65, A: 255}
@@ -71,11 +66,6 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14)
 
 	return
-}
-
-func (app *App) Resized(windowWidth int32, windowHeight int32) {
-	app.Layout.Update(sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight})
-	app.StatusBar.Layout.Update(app.Layout.ConsumeSpaceBottom(22))
 }
 
 func (app *App) handleInputNormal(input Input) {
@@ -291,13 +281,55 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	}
 }
 
-func (app *App) Render(renderer *sdl.Renderer) {
-	app.StartFrame()
-	// app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode], &app.Layout.Rect)
+func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
+	window := sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
+	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode], &window)
 
-	app.StatusBar.Render(renderer)
-	app.StatusBar.RenderMode(renderer, string(app.Mode), app.ColorMap[app.Mode], &app.BoldFont14)
-	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
+	statusBarRect := sdl.Rect{
+		X: 0,
+		Y: windowHeight - 22,
+		W: windowWidth,
+		H: 22,
+	}
+	DrawRect(renderer, &statusBarRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
+
+	statusWidth, statusHeight := app.BoldFont14.GetStringSize(string(app.Mode))
+	statusBgRect := sdl.Rect{
+		X: 0,
+		Y: statusBarRect.Y,
+		W: statusWidth + 16,
+		H: statusBarRect.H,
+	}
+	DrawRect(renderer, &statusBgRect, app.ColorMap[app.Mode])
+	statusRect := sdl.Rect{
+		X: 8,
+		Y: statusBarRect.Y + (statusBarRect.H-statusHeight)/2,
+		W: statusWidth,
+		H: statusHeight,
+	}
+	DrawText(renderer, &app.BoldFont14, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	app.StatusBarTriangle.Render(renderer, sdl.Point{X: statusBgRect.X + statusBgRect.W, Y: statusBgRect.Y}, app.ColorMap[app.Mode])
+
+	if app.Submode != Submode_None {
+		submodeWidth, submodeHeight := app.RegularFont14.GetStringSize(string(app.Submode))
+		submodeRect := sdl.Rect{
+			X: statusBgRect.X + statusBgRect.W + app.StatusBarTriangle.Width + 5,
+			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
+			W: submodeWidth,
+			H: submodeHeight,
+		}
+		DrawText(renderer, &app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	}
+
+	linesStatus := fmt.Sprintf("Lines: %d", app.Buffer.TotalLines)
+	linesWidth, linesHeight := app.RegularFont14.GetStringSize(linesStatus)
+	linesRect := sdl.Rect{
+		X: window.W - 8 - linesWidth,
+		Y: statusBarRect.Y + (statusBarRect.H-linesHeight)/2,
+		W: linesWidth,
+		H: linesHeight,
+	}
+	DrawText(renderer, &app.RegularFont14, linesStatus, &linesRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 }
 
 func (app *App) Tick(input Input) {
@@ -313,9 +345,4 @@ func (app *App) Tick(input Input) {
 func (app *App) Close() {
 	app.RegularFont14.Unload()
 	app.BoldFont14.Unload()
-}
-
-func (app *App) StartFrame() {
-	app.Layout.Reset()
-	app.StatusBar.Layout.Reset()
 }
