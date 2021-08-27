@@ -36,6 +36,7 @@ type App struct {
 
 	ColorMap          map[Mode]sdl.Color
 	StatusBarTriangle Image
+	WindowRect        sdl.Rect
 
 	LineHeight int32
 
@@ -46,7 +47,7 @@ type App struct {
 }
 
 // @TODO is there a way to avoid passing a renderer here?
-func Init(renderer *sdl.Renderer) (result App) {
+func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result App) {
 	result = App{}
 
 	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
@@ -59,13 +60,22 @@ func Init(renderer *sdl.Renderer) (result App) {
 	result.ColorMap[Mode_Visual] = sdl.Color{R: 245, G: 213, B: 71, A: 255}
 	result.ColorMap[Mode_VisualLine] = sdl.Color{R: 73, G: 132, B: 103, A: 255}
 
+	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
+
 	result.LineHeight = 18
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
-	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14)
+	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - 22})
 
 	return
+}
+
+func (app *App) Resized(windowWidth int32, windowHeight int32) {
+	app.WindowRect.W = windowWidth
+	app.WindowRect.H = windowHeight
+	app.Buffer.Rect.W = windowWidth
+	app.Buffer.Rect.H = windowHeight - 22
 }
 
 func (app *App) handleInputNormal(input Input) {
@@ -281,14 +291,13 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	}
 }
 
-func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
-	window := sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
-	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode], &window)
+func (app *App) Render(renderer *sdl.Renderer) {
+	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode])
 
 	statusBarRect := sdl.Rect{
 		X: 0,
-		Y: windowHeight - 22,
-		W: windowWidth,
+		Y: app.WindowRect.H - 22,
+		W: app.WindowRect.W,
 		H: 22,
 	}
 	DrawRect(renderer, &statusBarRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
@@ -324,7 +333,7 @@ func (app *App) Render(renderer *sdl.Renderer, windowWidth int32, windowHeight i
 	linesStatus := fmt.Sprintf("Lines: %d", app.Buffer.TotalLines)
 	linesWidth, linesHeight := app.RegularFont14.GetStringSize(linesStatus)
 	linesRect := sdl.Rect{
-		X: window.W - 8 - linesWidth,
+		X: app.WindowRect.W - 8 - linesWidth,
 		Y: statusBarRect.Y + (statusBarRect.H-linesHeight)/2,
 		W: linesWidth,
 		H: linesHeight,

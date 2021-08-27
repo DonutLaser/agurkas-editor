@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -23,7 +24,9 @@ type Buffer struct {
 	Font        *Font
 	LineSpacing int32
 
-	Cursor Cursor
+	Cursor        Cursor
+	Rect          sdl.Rect
+	ScrollOffsetY int32
 
 	BookmarkLine int32
 
@@ -31,7 +34,7 @@ type Buffer struct {
 	Dirty    bool
 }
 
-func CreateBuffer(lineHeight int32, font *Font) Buffer {
+func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) Buffer {
 	result := Buffer{
 		Data:        make([]byte, 16),
 		GapStart:    0,
@@ -45,6 +48,7 @@ func CreateBuffer(lineHeight int32, font *Font) Buffer {
 			Height:      lineHeight,
 			Advance:     int32(font.CharacterWidth),
 		},
+		Rect:         rect,
 		BookmarkLine: 0,
 		Filepath:     "",
 		Dirty:        false,
@@ -419,16 +423,16 @@ func (buffer *Buffer) GetText() []string {
 	return strings.Split(sb.String(), "\n")
 }
 
-func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.Color, window *sdl.Rect) {
+func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.Color) {
 	gutterRect := sdl.Rect{
 		X: 0,
 		Y: 0,
 		W: 48,
-		H: window.H,
+		H: buffer.Rect.H,
 	}
 	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 
-	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, window.W)
+	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, buffer.Rect.W)
 
 	text := buffer.GetText()
 	for index, line := range text {
@@ -441,9 +445,6 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 			lineNumberColor.R = cursorColor.R
 			lineNumberColor.G = cursorColor.G
 			lineNumberColor.B = cursorColor.B
-			// lineNumberColor.R = 245
-			// lineNumberColor.G = 213
-			// lineNumberColor.B = 71
 
 			numberHighlightRect := sdl.Rect{
 				X: gutterRect.X,

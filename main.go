@@ -142,7 +142,9 @@ func main() {
 	checkError(err)
 	defer renderer.Destroy()
 
-	app := Init(renderer)
+	windowWidth, windowHeight := window.GetSize()
+
+	app := Init(renderer, windowWidth, windowHeight)
 	app.PlatformApi.SetWindowTitle = func(title string) {
 		window.SetTitle(fmt.Sprintf("Agurkas - %s", title))
 	}
@@ -186,6 +188,10 @@ func main() {
 						input.TypedCharacter = keyToCharacter(keycode, t.Keysym.Mod)
 					}
 				}
+			case *sdl.WindowEvent:
+				if t.Event == sdl.WINDOWEVENT_RESIZED {
+					app.Resized(t.Data1, t.Data2)
+				}
 			}
 		}
 
@@ -194,9 +200,7 @@ func main() {
 		renderer.SetDrawColor(20, 21, 24, 255)
 		renderer.Clear()
 
-		windowWidth, windowHeight := window.GetSize()
-
-		app.Render(renderer, windowWidth, windowHeight)
+		app.Render(renderer)
 
 		renderer.Present()
 	}
