@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -285,6 +284,12 @@ func (buffer *Buffer) MoveUp() {
 		for buffer.Cursor.Column > endColumn {
 			buffer.moveLeftInternal()
 		}
+
+		cursorTop := buffer.Cursor.GetTop() + buffer.ScrollOffsetY
+		diff := cursorTop - buffer.Rect.Y
+		if diff < 0 {
+			buffer.ScrollOffsetY -= diff
+		}
 	}
 }
 
@@ -310,6 +315,12 @@ func (buffer *Buffer) MoveDown() {
 		// @TODO (!important) when the next line is shorter than the current column, this will unnecessarily try moving right
 		for i := 0; i < int(endColumn); i += 1 {
 			buffer.MoveRight()
+		}
+
+		cursorBottom := buffer.Cursor.GetBottom() + buffer.ScrollOffsetY
+		diff := cursorBottom - (buffer.Rect.Y + buffer.Rect.H)
+		if diff > 0 {
+			buffer.ScrollOffsetY -= diff
 		}
 	}
 }
@@ -432,7 +443,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 	}
 	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 
-	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, buffer.Rect.W)
+	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, buffer.Rect.W, buffer.ScrollOffsetY)
 
 	text := buffer.GetText()
 	for index, line := range text {
@@ -448,7 +459,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 
 			numberHighlightRect := sdl.Rect{
 				X: gutterRect.X,
-				Y: buffer.Cursor.Line * buffer.Cursor.Height,
+				Y: buffer.Cursor.Line*buffer.Cursor.Height + buffer.ScrollOffsetY,
 				W: gutterRect.W,
 				H: buffer.Cursor.Height,
 			}
@@ -460,7 +471,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
 			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing,
+			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing + buffer.ScrollOffsetY,
 			W: width,
 			H: height,
 		}
@@ -473,7 +484,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 		width, height = buffer.Font.GetStringSize(line)
 		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 			X: gutterRect.W + 5,
-			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing,
+			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing + buffer.ScrollOffsetY,
 			W: width,
 			H: height,
 		}

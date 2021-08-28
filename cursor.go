@@ -11,10 +11,10 @@ type Cursor struct {
 	Advance     int32
 }
 
-func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color, gutterWidth int32, windowWidth int32) {
+func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
 	lineHighlightRect := sdl.Rect{
 		X: gutterWidth,
-		Y: cursor.Line * cursor.Height,
+		Y: cursor.Line*cursor.Height + scrollOffsetY,
 		W: windowWidth - gutterWidth,
 		H: cursor.Height,
 	}
@@ -27,9 +27,17 @@ func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color,
 
 	cursorRect := sdl.Rect{
 		X: gutterWidth + 5 + cursor.Column*cursor.Advance,
-		Y: cursor.Line * cursor.Height,
+		Y: cursor.Line*cursor.Height + scrollOffsetY,
 		W: width,
 		H: cursor.Height,
 	}
 	DrawRect(renderer, &cursorRect, color)
+}
+
+func (cursor *Cursor) GetBottom() int32 {
+	return cursor.Line*cursor.Height + cursor.Height
+}
+
+func (cursor *Cursor) GetTop() int32 {
+	return cursor.Line * cursor.Height
 }
