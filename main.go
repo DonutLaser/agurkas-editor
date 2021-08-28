@@ -30,7 +30,7 @@ func keyToCharacter(key sdl.Keycode, mod uint16) byte {
 	case sdl.K_t:
 		return getCharacter(shift, 't', 'T')
 	case sdl.K_y:
-		return getCharacter(shift, 't', 'T')
+		return getCharacter(shift, 'y', 'Y')
 	case sdl.K_u:
 		return getCharacter(shift, 'u', 'U')
 	case sdl.K_i:
