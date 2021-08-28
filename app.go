@@ -144,6 +144,7 @@ func (app *App) handleInputNormal(input Input) {
 	case 'i':
 		app.Mode = Mode_Insert
 	case 'I':
+		// @TODO (!important) move to the first non white space character in the line
 		app.Mode = Mode_Insert
 		app.Buffer.MoveToStartOfLine()
 	case 'a':
