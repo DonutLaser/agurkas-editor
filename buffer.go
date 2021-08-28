@@ -97,6 +97,7 @@ func (buffer *Buffer) Insert(char byte) {
 		buffer.Cursor.Column = 0
 		buffer.Cursor.Line += 1
 		buffer.TotalLines += 1
+		buffer.maybeScrollDown()
 	} else {
 		buffer.Cursor.Column += 1
 	}
@@ -287,11 +288,7 @@ func (buffer *Buffer) MoveUp() {
 			buffer.moveLeftInternal()
 		}
 
-		cursorTop := buffer.Cursor.GetTop() + buffer.ScrollY
-		diff := cursorTop - (buffer.Rect.Y + buffer.ScrollOffset*buffer.Cursor.Height)
-		if diff < 0 {
-			buffer.ScrollY = int32(Min(int(buffer.ScrollY-diff), 0))
-		}
+		buffer.maybeScrollUp()
 	}
 }
 
@@ -319,11 +316,7 @@ func (buffer *Buffer) MoveDown() {
 			buffer.MoveRight()
 		}
 
-		cursorBottom := buffer.Cursor.GetBottom() + buffer.ScrollY
-		diff := cursorBottom - (buffer.Rect.Y + buffer.Rect.H - buffer.ScrollOffset*buffer.Cursor.Height)
-		if diff > 0 {
-			buffer.ScrollY -= diff
-		}
+		buffer.maybeScrollDown()
 	}
 }
 
@@ -586,6 +579,22 @@ func (buffer *Buffer) getNextCharacter() byte {
 	}
 
 	return buffer.Data[buffer.GapEnd+1]
+}
+
+func (buffer *Buffer) maybeScrollDown() {
+	cursorBottom := buffer.Cursor.GetBottom() + buffer.ScrollY
+	diff := cursorBottom - (buffer.Rect.Y + buffer.Rect.H - buffer.ScrollOffset*buffer.Cursor.Height)
+	if diff > 0 {
+		buffer.ScrollY -= diff
+	}
+}
+
+func (buffer *Buffer) maybeScrollUp() {
+	cursorTop := buffer.Cursor.GetTop() + buffer.ScrollY
+	diff := cursorTop - (buffer.Rect.Y + buffer.ScrollOffset*buffer.Cursor.Height)
+	if diff < 0 {
+		buffer.ScrollY = int32(Min(int(buffer.ScrollY-diff), 0))
+	}
 }
 
 func (buffer *Buffer) isPunctuationCharacter(char byte) bool {
