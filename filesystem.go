@@ -51,3 +51,14 @@ func OpenFile(path string) ([]byte, string, bool) {
 
 	return data, path, true
 }
+
+func SelectDirectory() (string, bool) {
+	path, err := dialog.Directory().Title("Select folder...").Browse()
+	if err != dialog.ErrCancelled {
+		checkError((err))
+	} else {
+		return "", false
+	}
+
+	return path, true
+}

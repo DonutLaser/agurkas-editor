@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -78,6 +80,26 @@ func (app *App) Resized(windowWidth int32, windowHeight int32) {
 	app.Buffer.Rect.H = windowHeight - 22
 }
 
+func (app *App) createProject(dirPath string) {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "root: %s", dirPath)
+
+	dirName := filepath.Base(dirPath)
+
+	finalPath, saveSuccess := SaveFile(filepath.Join(dirPath, fmt.Sprintf("%s.aproject", dirName)), []string{sb.String()})
+	if !saveSuccess {
+		return
+	}
+	data, _, openSuccess := OpenFile(finalPath)
+	if !openSuccess {
+		return
+	}
+
+	app.Mode = Mode_Normal
+	app.Buffer.SetData(data, finalPath)
+	app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
+}
+
 func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) e and E (move end word)
 	// @TODO (!important) y (yank)
@@ -107,29 +129,6 @@ func (app *App) handleInputNormal(input Input) {
 	if app.Submode == Submode_Change {
 		app.handleInputSubmodeChange(input)
 		return
-	}
-
-	if input.Ctrl {
-		if input.TypedCharacter == 's' && app.Buffer.Dirty {
-			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
-			if success {
-				app.Buffer.Filepath = filepath
-				app.Buffer.Dirty = false
-				app.PlatformApi.SetWindowTitle(filepath)
-			}
-
-			return
-		}
-
-		if input.TypedCharacter == 'o' {
-			data, filepath, success := OpenFile("")
-			if success {
-				app.Buffer.SetData(data, filepath)
-				app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
-			}
-
-			return
-		}
 	}
 
 	switch input.TypedCharacter {
@@ -343,7 +342,55 @@ func (app *App) Render(renderer *sdl.Renderer) {
 }
 
 func (app *App) Tick(input Input) {
+	if input.Ctrl {
+		// Save a file
+		if input.TypedCharacter == 's' && app.Buffer.Dirty {
+			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+			if success {
+				app.Buffer.Filepath = filepath
+				app.Buffer.Dirty = false
+				app.PlatformApi.SetWindowTitle(filepath)
+			}
+
+			return
+		}
+
+		// Open a file
+		if input.TypedCharacter == 'o' {
+			data, filepath, success := OpenFile("")
+			if success {
+				app.Mode = Mode_Normal
+				app.Buffer.SetData(data, filepath)
+				app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
+			}
+
+			return
+		}
+
+		if input.Alt {
+			// Save workspace
+			if input.TypedCharacter == 's' {
+				path, success := SelectDirectory()
+				if success {
+					app.createProject(path)
+				}
+
+				return
+			}
+
+			// Open workspace
+			if input.TypedCharacter == 'o' {
+				return
+			}
+
+			if input.TypedCharacter == 'p' {
+				return
+			}
+		}
+	}
+
 	// @TODO (!important) ctrl + shift + o command
+	// @TODO (!important) ctrl + alt + p
 	switch app.Mode {
 	case Mode_Normal:
 		app.handleInputNormal(input)
