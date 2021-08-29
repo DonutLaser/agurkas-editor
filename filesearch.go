@@ -127,6 +127,7 @@ func (fs *FileSearch) Tick(input Input) {
 }
 
 func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect) {
+	// @TODO (!important) border around the whole popup
 	inputRect := sdl.Rect{
 		X: parentRect.W/2 - fs.Width/2,
 		Y: parentRect.Y + int32(float32(parentRect.H)*0.15),

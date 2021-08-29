@@ -302,6 +302,7 @@ func (app *App) Render(renderer *sdl.Renderer) {
 }
 
 func (app *App) Tick(input Input) {
+	// @TODO (!important) cleanup this function
 	if app.FileSearchOpen {
 		app.FileSearch.Tick(input)
 		return
