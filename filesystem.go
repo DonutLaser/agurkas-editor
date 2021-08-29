@@ -93,3 +93,12 @@ func ReadDirectory(dirPath string, exclude []string) (result []string) {
 
 	return
 }
+
+func GetFileNameFromPath(path string) string {
+	name := filepath.Base(path)
+	if name == "." {
+		return ""
+	}
+
+	return name
+}

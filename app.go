@@ -26,23 +26,17 @@ const (
 	Submode_None    Submode = "none"
 )
 
-type PlatformApi struct {
-	SetWindowTitle func(string)
-}
-
 type App struct {
-	PlatformApi PlatformApi
-
 	RegularFont14 Font
 	BoldFont14    Font
 
-	ColorMap          map[Mode]sdl.Color
-	StatusBarTriangle Image
-	WindowRect        sdl.Rect
+	ColorMap   map[Mode]sdl.Color
+	WindowRect sdl.Rect
 
 	LineHeight int32
 
-	Buffer Buffer
+	StatusBar StatusBar
+	Buffer    Buffer
 
 	Mode    Mode
 	Submode Submode
@@ -51,25 +45,23 @@ type App struct {
 
 // @TODO is there a way to avoid passing a renderer here?
 func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result App) {
-	result = App{}
-
 	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
 	result.BoldFont14 = LoadFont("./assets/fonts/consolab.ttf", 14)
 
-	result.StatusBarTriangle = LoadImage("./assets/images/status_bar_triangle.png", renderer)
 	result.ColorMap = make(map[Mode]sdl.Color)
 	result.ColorMap[Mode_Normal] = sdl.Color{R: 90, G: 169, B: 230, A: 255}
 	result.ColorMap[Mode_Insert] = sdl.Color{R: 213, G: 41, B: 65, A: 255}
 	result.ColorMap[Mode_Visual] = sdl.Color{R: 245, G: 213, B: 71, A: 255}
 	result.ColorMap[Mode_VisualLine] = sdl.Color{R: 73, G: 132, B: 103, A: 255}
-
 	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
 
 	result.LineHeight = 18
 
+	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
+	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
+
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
-	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - 22})
 
 	return
 }
@@ -98,7 +90,6 @@ func (app *App) createProject(dirPath string) {
 
 	app.Mode = Mode_Normal
 	app.Buffer.SetData(data, finalPath)
-	app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
 }
 
 func (app *App) handleInputNormal(input Input) {
@@ -295,62 +286,11 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 func (app *App) Render(renderer *sdl.Renderer) {
 	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode])
 
-	statusBarRect := sdl.Rect{
-		X: 0,
-		Y: app.WindowRect.H - 22,
-		W: app.WindowRect.W,
-		H: 22,
-	}
-	DrawRect(renderer, &statusBarRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
-
-	statusWidth, statusHeight := app.BoldFont14.GetStringSize(string(app.Mode))
-	statusBgRect := sdl.Rect{
-		X: 0,
-		Y: statusBarRect.Y,
-		W: statusWidth + 16,
-		H: statusBarRect.H,
-	}
-	DrawRect(renderer, &statusBgRect, app.ColorMap[app.Mode])
-	statusRect := sdl.Rect{
-		X: 8,
-		Y: statusBarRect.Y + (statusBarRect.H-statusHeight)/2,
-		W: statusWidth,
-		H: statusHeight,
-	}
-	DrawText(renderer, &app.BoldFont14, string(app.Mode), &statusRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
-	app.StatusBarTriangle.Render(renderer, sdl.Point{X: statusBgRect.X + statusBgRect.W, Y: statusBgRect.Y}, app.ColorMap[app.Mode])
-
-	if app.Submode != Submode_None {
-		submodeWidth, submodeHeight := app.RegularFont14.GetStringSize(string(app.Submode))
-		submodeRect := sdl.Rect{
-			X: statusBgRect.X + statusBgRect.W + app.StatusBarTriangle.Width + 5,
-			Y: statusBarRect.Y + (statusBarRect.H-submodeHeight)/2,
-			W: submodeWidth,
-			H: submodeHeight,
-		}
-		DrawText(renderer, &app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
-	}
-
-	if app.Project.Name != "" {
-		nameWidth, nameHeight := app.RegularFont14.GetStringSize(app.Project.Name)
-		nameRect := sdl.Rect{
-			X: statusBarRect.W/2 - nameWidth/2,
-			Y: statusBarRect.Y + (statusBarRect.H-nameHeight)/2,
-			W: nameWidth,
-			H: nameHeight,
-		}
-		DrawText(renderer, &app.RegularFont14, app.Project.Name, &nameRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
-	}
-
-	linesStatus := fmt.Sprintf("Lines: %d", app.Buffer.TotalLines)
-	linesWidth, linesHeight := app.RegularFont14.GetStringSize(linesStatus)
-	linesRect := sdl.Rect{
-		X: app.WindowRect.W - 8 - linesWidth,
-		Y: statusBarRect.Y + (statusBarRect.H-linesHeight)/2,
-		W: linesWidth,
-		H: linesHeight,
-	}
-	DrawText(renderer, &app.RegularFont14, linesStatus, &linesRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	app.StatusBar.Begin(renderer)
+	app.StatusBar.RenderMode(renderer, app.Mode, app.ColorMap[app.Mode], &app.BoldFont14)
+	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14)
+	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14)
+	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
 }
 
 func (app *App) Tick(input Input) {
@@ -387,7 +327,6 @@ func (app *App) Tick(input Input) {
 			if success {
 				app.Buffer.Filepath = filepath
 				app.Buffer.Dirty = false
-				app.PlatformApi.SetWindowTitle(filepath)
 			}
 
 			return
@@ -399,7 +338,6 @@ func (app *App) Tick(input Input) {
 			if success {
 				app.Mode = Mode_Normal
 				app.Buffer.SetData(data, filepath)
-				app.PlatformApi.SetWindowTitle(app.Buffer.Filepath)
 			}
 
 			return
