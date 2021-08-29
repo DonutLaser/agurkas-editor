@@ -2,7 +2,7 @@ package main
 
 import "github.com/veandco/go-sdl2/sdl"
 
-type Cursor struct {
+type BufferCursor struct {
 	Line        int32
 	Column      int32
 	WidthNormal int32
@@ -11,7 +11,7 @@ type Cursor struct {
 	Advance     int32
 }
 
-func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
+func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
 	lineHighlightRect := sdl.Rect{
 		X: gutterWidth,
 		Y: cursor.Line*cursor.Height + scrollOffsetY,
@@ -34,10 +34,10 @@ func (cursor *Cursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color,
 	DrawRect(renderer, &cursorRect, color)
 }
 
-func (cursor *Cursor) GetBottom() int32 {
+func (cursor *BufferCursor) GetBottom() int32 {
 	return cursor.Line*cursor.Height + cursor.Height
 }
 
-func (cursor *Cursor) GetTop() int32 {
+func (cursor *BufferCursor) GetTop() int32 {
 	return cursor.Line * cursor.Height
 }

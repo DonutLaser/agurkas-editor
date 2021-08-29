@@ -23,7 +23,7 @@ type Buffer struct {
 	Font        *Font
 	LineSpacing int32
 
-	Cursor       Cursor
+	Cursor       BufferCursor
 	Rect         sdl.Rect
 	ScrollY      int32
 	ScrollOffset int32
@@ -42,7 +42,7 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) Buffer {
 		TotalLines:  1,
 		Font:        font,
 		LineSpacing: (lineHeight - int32(font.Size)) / 2,
-		Cursor: Cursor{
+		Cursor: BufferCursor{
 			WidthNormal: 8,
 			WidthInsert: 2,
 			Height:      lineHeight,

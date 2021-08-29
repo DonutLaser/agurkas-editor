@@ -35,12 +35,14 @@ type App struct {
 
 	LineHeight int32
 
-	StatusBar StatusBar
-	Buffer    Buffer
+	StatusBar  StatusBar
+	Buffer     Buffer
+	FileSearch FileSearch
 
-	Mode    Mode
-	Submode Submode
-	Project Project
+	Mode           Mode
+	Submode        Submode
+	Project        Project
+	FileSearchOpen bool
 }
 
 // @TODO is there a way to avoid passing a renderer here?
@@ -59,6 +61,7 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 
 	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
+	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14)
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
@@ -70,7 +73,8 @@ func (app *App) Resized(windowWidth int32, windowHeight int32) {
 	app.WindowRect.W = windowWidth
 	app.WindowRect.H = windowHeight
 	app.Buffer.Rect.W = windowWidth
-	app.Buffer.Rect.H = windowHeight - 22
+	app.Buffer.Rect.H = windowHeight - app.StatusBar.Rect.H
+	app.StatusBar.Update(&app.WindowRect)
 }
 
 func (app *App) createProject(dirPath string) {
@@ -291,9 +295,18 @@ func (app *App) Render(renderer *sdl.Renderer) {
 	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14)
 	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14)
 	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
+
+	if app.FileSearchOpen {
+		app.FileSearch.Render(renderer, &app.Buffer.Rect)
+	}
 }
 
 func (app *App) Tick(input Input) {
+	if app.FileSearchOpen {
+		app.FileSearch.Tick(input)
+		return
+	}
+
 	if input.Ctrl {
 		if input.Alt {
 			// Save workspace
@@ -319,6 +332,22 @@ func (app *App) Tick(input Input) {
 			if input.TypedCharacter == 'p' {
 				return
 			}
+		}
+
+		if input.TypedCharacter == 'p' && !app.FileSearchOpen {
+			app.FileSearchOpen = true
+			app.FileSearch.Open(PathsToFileSearchEntries(app.Project.Files), func(path string) {
+				app.FileSearchOpen = false
+				if path != "" {
+					return
+				}
+
+				data, _, success := OpenFile(path)
+				if success {
+					app.Mode = Mode_Normal
+					app.Buffer.SetData(data, path)
+				}
+			})
 		}
 
 		// Save a file

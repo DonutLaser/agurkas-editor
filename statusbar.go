@@ -15,15 +15,18 @@ type StatusBar struct {
 
 func CreateStatusBar(renderer *sdl.Renderer, window *sdl.Rect) (result StatusBar) {
 	result.TriangeImage = LoadImage("./assets/images/status_bar_triangle.png", renderer)
-	result.Rect = sdl.Rect{
+	result.Update(window)
+	return
+}
+
+func (bar *StatusBar) Update(window *sdl.Rect) {
+	bar.Rect = sdl.Rect{
 		X: 0,
 		Y: window.H - 22,
 		W: window.W,
 		H: 22,
 	}
-	result.RemainingRect = result.Rect
-
-	return
+	bar.RemainingRect = bar.Rect
 }
 
 func (bar *StatusBar) Begin(renderer *sdl.Renderer) {
