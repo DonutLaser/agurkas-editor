@@ -63,7 +63,7 @@ func keyToCharacter(key sdl.Keycode, mod uint16) byte {
 		return getCharacter(shift, 'k', 'K')
 	case sdl.K_l:
 		return getCharacter(shift, 'l', 'L')
-	case sdl.K_COLON:
+	case sdl.K_SEMICOLON:
 		return getCharacter(shift, ';', ':')
 	case sdl.K_QUOTE:
 		return getCharacter(shift, '\'', '"')

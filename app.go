@@ -46,6 +46,7 @@ type App struct {
 
 	Mode    Mode
 	Submode Submode
+	Project Project
 }
 
 // @TODO is there a way to avoid passing a renderer here?
@@ -330,6 +331,17 @@ func (app *App) Render(renderer *sdl.Renderer) {
 		DrawText(renderer, &app.RegularFont14, string(app.Submode), &submodeRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
 	}
 
+	if app.Project.Name != "" {
+		nameWidth, nameHeight := app.RegularFont14.GetStringSize(app.Project.Name)
+		nameRect := sdl.Rect{
+			X: statusBarRect.W/2 - nameWidth/2,
+			Y: statusBarRect.Y + (statusBarRect.H-nameHeight)/2,
+			W: nameWidth,
+			H: nameHeight,
+		}
+		DrawText(renderer, &app.RegularFont14, app.Project.Name, &nameRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	}
+
 	linesStatus := fmt.Sprintf("Lines: %d", app.Buffer.TotalLines)
 	linesWidth, linesHeight := app.RegularFont14.GetStringSize(linesStatus)
 	linesRect := sdl.Rect{
@@ -343,6 +355,32 @@ func (app *App) Render(renderer *sdl.Renderer) {
 
 func (app *App) Tick(input Input) {
 	if input.Ctrl {
+		if input.Alt {
+			// Save workspace
+			if input.TypedCharacter == 's' {
+				path, success := SelectDirectory()
+				if success {
+					app.createProject(path)
+				}
+
+				return
+			}
+
+			// Open workspace
+			if input.TypedCharacter == 'o' {
+				data, _, success := OpenFile("")
+				if success {
+					app.Project = ParseProject(string(data))
+				}
+
+				return
+			}
+
+			if input.TypedCharacter == 'p' {
+				return
+			}
+		}
+
 		// Save a file
 		if input.TypedCharacter == 's' && app.Buffer.Dirty {
 			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
@@ -367,26 +405,6 @@ func (app *App) Tick(input Input) {
 			return
 		}
 
-		if input.Alt {
-			// Save workspace
-			if input.TypedCharacter == 's' {
-				path, success := SelectDirectory()
-				if success {
-					app.createProject(path)
-				}
-
-				return
-			}
-
-			// Open workspace
-			if input.TypedCharacter == 'o' {
-				return
-			}
-
-			if input.TypedCharacter == 'p' {
-				return
-			}
-		}
 	}
 
 	// @TODO (!important) ctrl + shift + o command

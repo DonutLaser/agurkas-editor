@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/sqweek/dialog"
@@ -61,4 +62,34 @@ func SelectDirectory() (string, bool) {
 	}
 
 	return path, true
+}
+
+func ReadDirectory(dirPath string, exclude []string) (result []string) {
+	files, err := ioutil.ReadDir(dirPath)
+	checkError(err)
+
+	shouldInclude := func(excludes []string, path string) bool {
+		for _, ex := range excludes {
+			if strings.Contains(path, ex) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	for _, file := range files {
+		fullPath := filepath.Join(dirPath, file.Name())
+		if !shouldInclude(exclude, fullPath) {
+			continue
+		}
+
+		if !file.IsDir() {
+			result = append(result, fullPath)
+		} else {
+			result = append(result, ReadDirectory(fullPath, exclude)...)
+		}
+	}
+
+	return
 }
