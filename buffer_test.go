@@ -30,6 +30,37 @@ func TestCreateBuffer(t *testing.T) {
 	FailIfFalse(result.Dirty == false, "New buffer should not be dirty", t)
 }
 
+func TestSetData(t *testing.T) {
+	fakeFont := GetFakeFont()
+	buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
+	buffer.Insert('a')
+	buffer.Insert('b')
+	buffer.Insert('c')
+	buffer.Insert('d')
+	buffer.Insert('\n')
+	buffer.Insert('e')
+	buffer.Insert('f')
+	buffer.Insert('\n')
+	buffer.Insert('\n')
+	buffer.Insert('g')
+	buffer.Insert('h')
+
+	data := []byte("package main\n\n\tfunc main() {}")
+	buffer.SetData(data, "testPath.go")
+
+	FailIfFalse(buffer.GapEnd-buffer.GapStart+1 == 16, "Incorrect gap size after setting the data", t)
+	FailIfFalse(buffer.Filepath == "testPath.go", "Incorret filepath set after setting the data", t)
+	FailIfFalse(buffer.TotalLines == 3, "Incorret total line count after setting the data", t)
+
+	result := buffer.GetText()
+	expected := []string{"package main", "", "    func main() {}"}
+	FailNowIfFalse(len(result) == len(expected), "Incorrect line count received", t)
+
+	for index, line := range result {
+		FailIfFalse(line == expected[index], fmt.Sprintf("Expected line %d to be %s, got %s", index, expected[index], line), t)
+	}
+}
+
 func TestGetText(t *testing.T) {
 	fakeFont := GetFakeFont()
 	buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
@@ -64,6 +95,7 @@ func TestInsert(t *testing.T) {
 		buffer.Insert('s')
 
 		FailIfFalse(buffer.Cursor.Column == 7, "Cursor column is not where it should be", t)
+		FailIfFalse(buffer.Dirty, "Buffer is not dirty after Insert", t)
 
 		result := buffer.GetText()
 		FailNowIfFalse(len(result) == 1, "Expected to get only 1 line of text", t)

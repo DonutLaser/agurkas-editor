@@ -58,7 +58,6 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) Buffer {
 	return result
 }
 
-// @TODO (!important) write tests for this
 func (buffer *Buffer) SetData(data []byte, filepath string) {
 	cleaned := cleanText(data)
 
