@@ -339,7 +339,7 @@ func (app *App) Tick(input Input) {
 			app.FileSearchOpen = true
 			app.FileSearch.Open(PathsToFileSearchEntries(app.Project.Files), func(path string) {
 				app.FileSearchOpen = false
-				if path != "" {
+				if path == "" {
 					return
 				}
 

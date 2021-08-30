@@ -26,6 +26,8 @@ type FileSearch struct {
 	MaxSearchResults int32
 
 	CloseCallback func(string)
+
+	altWasPressed bool
 }
 
 func PathsToFileSearchEntries(paths []string) (result []FileSearchEntry) {
@@ -97,7 +99,14 @@ func (fs *FileSearch) Tick(input Input) {
 			fs.SelectionIndex = int32(Max(int(fs.SelectionIndex)-1, 0))
 		}
 
+		fs.altWasPressed = true
+
 		return
+	} else if fs.altWasPressed {
+		fs.altWasPressed = false
+		if len(fs.FoundEntries) > 0 {
+			fs.Submit()
+		}
 	}
 
 	if input.Escape {
@@ -113,7 +122,7 @@ func (fs *FileSearch) Tick(input Input) {
 	}
 
 	if input.TypedCharacter != 0 {
-		if input.TypedCharacter == '\t' {
+		if input.TypedCharacter == '\t' || input.TypedCharacter == '\n' {
 			if len(fs.FoundEntries) > 0 {
 				fs.Submit()
 			}
