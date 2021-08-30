@@ -143,6 +143,15 @@ func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect) {
 		W: fs.Width,
 		H: fs.LineHeight + 10,
 	}
+
+	borderRect := expandRect(sdl.Rect{
+		X: inputRect.X,
+		Y: inputRect.Y,
+		W: fs.Width,
+		H: inputRect.H + int32(len(fs.FoundEntries))*(fs.LineHeight+fs.LineSpacing*2),
+	}, 1)
+
+	DrawRect(renderer, &borderRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
 	DrawRect(renderer, &inputRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
 	fs.Cursor.Render(renderer, inputRect)
 
