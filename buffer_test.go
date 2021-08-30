@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 func GetFakeFont() Font {
@@ -15,7 +17,7 @@ func GetFakeFont() Font {
 
 func TestCreateBuffer(t *testing.T) {
 	fakeFont := GetFakeFont()
-	result := CreateBuffer(16, &fakeFont)
+	result := CreateBuffer(16, &fakeFont, sdl.Rect{})
 
 	FailIfFalse(len(result.Data) == 16, "Incorrect buffer size", t)
 	FailIfFalse(result.GapStart == 0, "Incorrect gap start", t)
@@ -30,7 +32,7 @@ func TestCreateBuffer(t *testing.T) {
 
 func TestGetText(t *testing.T) {
 	fakeFont := GetFakeFont()
-	buffer := CreateBuffer(16, &fakeFont)
+	buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 
 	// Setting up buffer data to be abcd\ne_________o which should procude two lines: 'abcd' and 'ei'
 	bytes := []byte("abcd\nefghijklmno")
@@ -52,7 +54,7 @@ func TestGetText(t *testing.T) {
 func TestInsert(t *testing.T) {
 	t.Run("Insert at the end of the buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('g')
 		buffer.Insert('u')
@@ -70,7 +72,7 @@ func TestInsert(t *testing.T) {
 
 	t.Run("Insert new line at the end of the buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -95,7 +97,7 @@ func TestInsert(t *testing.T) {
 
 	t.Run("Insert in the middle of the text", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -111,7 +113,7 @@ func TestInsert(t *testing.T) {
 
 	t.Run("Insert new line in the middle of the text", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -131,7 +133,7 @@ func TestInsert(t *testing.T) {
 
 	t.Run("Insert new line at the beginning of the text", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -153,7 +155,7 @@ func TestInsert(t *testing.T) {
 
 	t.Run("Expand when inserting characters", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -186,7 +188,7 @@ func TestInsert(t *testing.T) {
 func TestRemoveBefore(t *testing.T) {
 	t.Run("Remove from the end of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -203,7 +205,7 @@ func TestRemoveBefore(t *testing.T) {
 
 	t.Run("Remove symbol from empty buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.RemoveBefore()
 
 		result := buffer.GetText()
@@ -213,7 +215,7 @@ func TestRemoveBefore(t *testing.T) {
 
 	t.Run("Remove new line symbol", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -236,7 +238,7 @@ func TestRemoveBefore(t *testing.T) {
 func TestRemoveAfter(t *testing.T) {
 	t.Run("Remove from the end of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -249,7 +251,7 @@ func TestRemoveAfter(t *testing.T) {
 
 	t.Run("Remove from the middle of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -267,7 +269,7 @@ func TestRemoveAfter(t *testing.T) {
 
 	t.Run("Remove new line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -289,7 +291,7 @@ func TestRemoveAfter(t *testing.T) {
 func TestMoveLeft(t *testing.T) {
 	t.Run("Move in the middle of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -309,7 +311,7 @@ func TestMoveLeft(t *testing.T) {
 
 	t.Run("Move at the beginning of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.MoveLeft()
@@ -326,7 +328,7 @@ func TestMoveLeft(t *testing.T) {
 
 	t.Run("Move at the beginning of line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('\n')
@@ -353,7 +355,7 @@ func TestMoveLeft(t *testing.T) {
 func TestMoveRight(t *testing.T) {
 	t.Run("Move in the middle of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -372,7 +374,7 @@ func TestMoveRight(t *testing.T) {
 
 	t.Run("Move at the end of buffer", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -394,7 +396,7 @@ func TestMoveRight(t *testing.T) {
 func TestMoveUp(t *testing.T) {
 	t.Run("Move while on first line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -409,7 +411,7 @@ func TestMoveUp(t *testing.T) {
 
 	t.Run("Move while not on the first line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -435,7 +437,7 @@ func TestMoveUp(t *testing.T) {
 
 	t.Run("Move up when previous line is too short", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -467,7 +469,7 @@ func TestMoveUp(t *testing.T) {
 func TestMoveDown(t *testing.T) {
 	t.Run("Move while on the last line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -496,7 +498,7 @@ func TestMoveDown(t *testing.T) {
 
 	t.Run("move while not on the last line", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -527,7 +529,7 @@ func TestMoveDown(t *testing.T) {
 
 	t.Run("Move down when next line is too short", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -558,7 +560,7 @@ func TestMoveDown(t *testing.T) {
 func TestMovementScenarios(t *testing.T) {
 	t.Run("Moving up shouldn't offset the cursor to the left", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('b')
 		buffer.Insert('c')
@@ -583,7 +585,7 @@ func TestMovementScenarios(t *testing.T) {
 
 	t.Run("Moving up from an empty line shouldn't crash", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('a')
 		buffer.Insert('\n')
 		buffer.Insert('\n')
@@ -609,7 +611,7 @@ func TestMovementScenarios(t *testing.T) {
 
 	t.Run("Moving up to the first line which is empty should not crash", func(t *testing.T) {
 		fakeFont := GetFakeFont()
-		buffer := CreateBuffer(16, &fakeFont)
+		buffer := CreateBuffer(16, &fakeFont, sdl.Rect{})
 		buffer.Insert('\n')
 		buffer.MoveUp()
 
