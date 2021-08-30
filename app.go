@@ -8,6 +8,10 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// ==============================================================
+// TYPES
+// ==============================================================
+
 type Mode string
 type Submode string
 
@@ -45,6 +49,10 @@ type App struct {
 	FileSearchOpen bool
 }
 
+// ==============================================================
+// PUBLIC FUNCTIONS
+// ==============================================================
+
 // @TODO is there a way to avoid passing a renderer here?
 func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result App) {
 	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
@@ -69,6 +77,11 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	return
 }
 
+func (app *App) Close() {
+	app.RegularFont14.Unload()
+	app.BoldFont14.Unload()
+}
+
 func (app *App) Resized(windowWidth int32, windowHeight int32) {
 	app.WindowRect.W = windowWidth
 	app.WindowRect.H = windowHeight
@@ -77,24 +90,63 @@ func (app *App) Resized(windowWidth int32, windowHeight int32) {
 	app.StatusBar.Update(&app.WindowRect)
 }
 
-func (app *App) createProject(dirPath string) {
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "root: %s", dirPath)
-
-	dirName := filepath.Base(dirPath)
-
-	finalPath, saveSuccess := SaveFile(filepath.Join(dirPath, fmt.Sprintf("%s.aproject", dirName)), []string{sb.String()})
-	if !saveSuccess {
-		return
-	}
-	data, _, openSuccess := OpenFile(finalPath)
-	if !openSuccess {
+func (app *App) Tick(input Input) {
+	if app.FileSearchOpen {
+		app.FileSearch.Tick(input)
 		return
 	}
 
-	app.Mode = Mode_Normal
-	app.Buffer.SetData(data, finalPath)
+	if input.Ctrl {
+		if input.Alt {
+			// Save workspace
+			if input.TypedCharacter == 's' {
+				app.saveProject()
+			} else if input.TypedCharacter == 'o' {
+				app.openProject()
+			} else if input.TypedCharacter == 'p' {
+			}
+
+			return
+		}
+
+		if input.TypedCharacter == 'p' && !app.FileSearchOpen {
+			app.openFileSearch()
+		} else if input.TypedCharacter == 's' && app.Buffer.Dirty {
+			app.saveSourceFile()
+		} else if input.TypedCharacter == 'o' {
+			app.openSourceFile("")
+		}
+
+		return
+	}
+
+	// @TODO (!important) ctrl + shift + o command
+	// @TODO (!important) ctrl + alt + p
+	switch app.Mode {
+	case Mode_Normal:
+		app.handleInputNormal(input)
+	case Mode_Insert:
+		app.handleInputInsert(input)
+	}
 }
+
+func (app *App) Render(renderer *sdl.Renderer) {
+	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode])
+
+	app.StatusBar.Begin(renderer)
+	app.StatusBar.RenderMode(renderer, app.Mode, app.ColorMap[app.Mode], &app.BoldFont14)
+	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14)
+	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14)
+	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
+
+	if app.FileSearchOpen {
+		app.FileSearch.Render(renderer, &app.Buffer.Rect)
+	}
+}
+
+// ==============================================================
+// PRIVATE FUNCTIONS
+// ==============================================================
 
 func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) e and E (move end word)
@@ -287,105 +339,58 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	}
 }
 
-func (app *App) Render(renderer *sdl.Renderer) {
-	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode])
+func (app *App) createProject(dirPath string) {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "root: %s", dirPath)
 
-	app.StatusBar.Begin(renderer)
-	app.StatusBar.RenderMode(renderer, app.Mode, app.ColorMap[app.Mode], &app.BoldFont14)
-	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14)
-	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14)
-	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
+	dirName := filepath.Base(dirPath)
 
-	if app.FileSearchOpen {
-		app.FileSearch.Render(renderer, &app.Buffer.Rect)
-	}
-}
-
-func (app *App) Tick(input Input) {
-	// @TODO (!important) cleanup this function
-	if app.FileSearchOpen {
-		app.FileSearch.Tick(input)
+	finalPath, saveSuccess := SaveFile(filepath.Join(dirPath, fmt.Sprintf("%s.aproject", dirName)), []string{sb.String()})
+	if !saveSuccess {
 		return
 	}
 
-	if input.Ctrl {
-		if input.Alt {
-			// Save workspace
-			if input.TypedCharacter == 's' {
-				path, success := SelectDirectory()
-				if success {
-					app.createProject(path)
-				}
+	app.openSourceFile(finalPath)
+}
 
-				return
-			}
-
-			// Open workspace
-			if input.TypedCharacter == 'o' {
-				data, _, success := OpenFile("")
-				if success {
-					app.Project = ParseProject(string(data))
-				}
-
-				return
-			}
-
-			if input.TypedCharacter == 'p' {
-				return
-			}
-		}
-
-		if input.TypedCharacter == 'p' && !app.FileSearchOpen {
-			app.FileSearchOpen = true
-			app.FileSearch.Open(PathsToFileSearchEntries(app.Project.Files), func(path string) {
-				app.FileSearchOpen = false
-				if path == "" {
-					return
-				}
-
-				data, _, success := OpenFile(path)
-				if success {
-					app.Mode = Mode_Normal
-					app.Buffer.SetData(data, path)
-				}
-			})
-		}
-
-		// Save a file
-		if input.TypedCharacter == 's' && app.Buffer.Dirty {
-			filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
-			if success {
-				app.Buffer.Filepath = filepath
-				app.Buffer.Dirty = false
-			}
-
-			return
-		}
-
-		// Open a file
-		if input.TypedCharacter == 'o' {
-			data, filepath, success := OpenFile("")
-			if success {
-				app.Mode = Mode_Normal
-				app.Buffer.SetData(data, filepath)
-			}
-
-			return
-		}
-
-	}
-
-	// @TODO (!important) ctrl + shift + o command
-	// @TODO (!important) ctrl + alt + p
-	switch app.Mode {
-	case Mode_Normal:
-		app.handleInputNormal(input)
-	case Mode_Insert:
-		app.handleInputInsert(input)
+func (app *App) saveProject() {
+	path, success := SelectDirectory()
+	if success {
+		app.createProject(path)
 	}
 }
 
-func (app *App) Close() {
-	app.RegularFont14.Unload()
-	app.BoldFont14.Unload()
+func (app *App) openProject() {
+	data, _, success := OpenFile("")
+	if success {
+		app.Project = ParseProject(string(data))
+	}
+}
+
+func (app *App) openFileSearch() {
+	app.FileSearchOpen = true
+	app.FileSearch.Open(PathsToFileSearchEntries(app.Project.Files), func(path string) {
+		app.FileSearchOpen = false
+		if path == "" {
+			return
+		}
+
+		app.openSourceFile(path)
+	})
+}
+
+func (app *App) saveSourceFile() {
+	filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+	if success {
+		app.Buffer.Filepath = filepath
+		app.Buffer.Dirty = false
+	}
+}
+
+func (app *App) openSourceFile(path string) {
+	data, filepath, success := OpenFile(path)
+	if success {
+		app.Mode = Mode_Normal
+		app.Buffer.SetData(data, filepath)
+	}
 }
