@@ -428,28 +428,37 @@ func (buffer *Buffer) GetText() []string {
 	return strings.Split(sb.String(), "\n")
 }
 
-func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.Color) {
+func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 	gutterRect := sdl.Rect{
 		X: 0,
 		Y: 0,
 		W: 48,
 		H: buffer.Rect.H,
 	}
-	DrawRect(renderer, &gutterRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
+	DrawRect(renderer, &gutterRect, theme.Gutter.BackgroundColor)
+
+	var cursorColor sdl.Color
+	if theme.Buffer.CursorColorMatchModeColor {
+		cursorColor = theme.GetColorForMode(mode)
+	} else {
+		cursorColor = theme.Buffer.CursorColor
+	}
 
 	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
 
 	text := buffer.GetText()
 	for index, line := range text {
 		lineNumber := Abs(int(buffer.Cursor.Line) - index)
-		lineNumberColor := sdl.Color{R: 137, G: 145, B: 162, A: 255}
+		lineNumberColor := theme.Gutter.LineNumberInactiveColor
 		lineNumberOffset := 0
 		if lineNumber == 0 {
 			lineNumber = index + 1
 			lineNumberOffset = 10
-			lineNumberColor.R = cursorColor.R
-			lineNumberColor.G = cursorColor.G
-			lineNumberColor.B = cursorColor.B
+			if theme.Gutter.LineNumberMatchModeColor {
+				lineNumberColor = cursorColor
+			} else {
+				lineNumberColor = theme.Gutter.LineNumberActiveColor
+			}
 
 			numberHighlightRect := sdl.Rect{
 				X: gutterRect.X,
@@ -457,7 +466,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 				W: gutterRect.W,
 				H: buffer.Cursor.Height,
 			}
-			DrawRect(renderer, &numberHighlightRect, sdl.Color{R: 25, G: 26, B: 28, A: 255})
+			DrawRect(renderer, &numberHighlightRect, theme.Gutter.LineHighlightColor)
 		}
 
 		lineNumberStr := strconv.Itoa(lineNumber)
@@ -483,7 +492,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, cursorColor sdl.
 			H: height,
 		}
 
-		DrawText(renderer, buffer.Font, line, &rect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		DrawText(renderer, buffer.Font, line, &rect, theme.Buffer.TextColor)
 	}
 }
 

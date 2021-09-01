@@ -17,7 +17,7 @@ func ParseProject(data string) (result Project) {
 	exclude := make([]string, 0)
 
 	for _, line := range split {
-		key, value := getKeyValue(line)
+		key, value := getKeyValue(line, ": ")
 
 		if key == "root" {
 			result.Root = value
@@ -35,8 +35,8 @@ func ParseProject(data string) (result Project) {
 	return
 }
 
-func getKeyValue(line string) (key string, value string) {
-	split := strings.Split(line, ": ")
+func getKeyValue(line string, separator string) (key string, value string) {
+	split := strings.Split(line, separator)
 	key = split[0]
 	value = split[1]
 	return

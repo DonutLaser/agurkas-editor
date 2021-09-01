@@ -32,10 +32,12 @@ const (
 
 type App struct {
 	RegularFont14 Font
+	RegularFont12 Font
 	BoldFont14    Font
 
-	ColorMap   map[Mode]sdl.Color
 	WindowRect sdl.Rect
+
+	Theme Theme
 
 	LineHeight int32
 
@@ -56,20 +58,22 @@ type App struct {
 // @TODO is there a way to avoid passing a renderer here?
 func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result App) {
 	result.RegularFont14 = LoadFont("./assets/fonts/consola.ttf", 14)
+	result.RegularFont12 = LoadFont("./assets/fonts/consola.ttf", 12)
 	result.BoldFont14 = LoadFont("./assets/fonts/consolab.ttf", 14)
 
-	result.ColorMap = make(map[Mode]sdl.Color)
-	result.ColorMap[Mode_Normal] = sdl.Color{R: 90, G: 169, B: 230, A: 255}
-	result.ColorMap[Mode_Insert] = sdl.Color{R: 213, G: 41, B: 65, A: 255}
-	result.ColorMap[Mode_Visual] = sdl.Color{R: 245, G: 213, B: 71, A: 255}
-	result.ColorMap[Mode_VisualLine] = sdl.Color{R: 73, G: 132, B: 103, A: 255}
 	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
+
+	result.Theme = ParseTheme("./default_theme.atheme")
+	fmt.Println(result.Theme.StatusBar.NormalColor)
+	fmt.Println(result.Theme.StatusBar.InsertColor)
+	fmt.Println(result.Theme.StatusBar.VisualColor)
+	fmt.Println(result.Theme.StatusBar.VisualLineColor)
 
 	result.LineHeight = 18
 
 	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
-	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14)
+	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14, &result.RegularFont12)
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
@@ -131,17 +135,23 @@ func (app *App) Tick(input Input) {
 }
 
 func (app *App) Render(renderer *sdl.Renderer) {
-	app.Buffer.Render(renderer, app.Mode, app.ColorMap[app.Mode])
+	cc := app.Theme.Buffer.BackgroundColor
+	renderer.SetDrawColor(cc.R, cc.G, cc.B, cc.A)
+	renderer.Clear()
 
-	app.StatusBar.Begin(renderer)
-	app.StatusBar.RenderMode(renderer, app.Mode, app.ColorMap[app.Mode], &app.BoldFont14)
-	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14)
-	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14)
-	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14)
+	app.Buffer.Render(renderer, app.Mode, &app.Theme)
+
+	app.StatusBar.Begin(renderer, &app.Theme.StatusBar)
+	app.StatusBar.RenderMode(renderer, app.Mode, &app.BoldFont14, &app.Theme.StatusBar)
+	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14, &app.Theme.StatusBar)
+	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14, &app.Theme.StatusBar)
+	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14, &app.Theme.StatusBar)
 
 	if app.FileSearchOpen {
-		app.FileSearch.Render(renderer, &app.Buffer.Rect)
+		app.FileSearch.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
 	}
+
+	renderer.Present()
 }
 
 // ==============================================================

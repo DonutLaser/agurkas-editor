@@ -19,11 +19,11 @@ type FileSearch struct {
 	Width       int32
 	LineHeight  int32
 	LineSpacing int32
-	Font        *Font
+	Font14      *Font
+	Font12      *Font
 
-	FileEntries      []FileSearchEntry
-	FoundEntries     []int // Array of indexes into file entries array
-	MaxSearchResults int32
+	FileEntries  []FileSearchEntry
+	FoundEntries []int // Array of indexes into file entries array
 
 	CloseCallback func(string)
 
@@ -41,16 +41,15 @@ func PathsToFileSearchEntries(paths []string) (result []FileSearchEntry) {
 	return
 }
 
-func CreateFileSearch(lineHeight int32, font *Font) (result FileSearch) {
+func CreateFileSearch(lineHeight int32, font14 *Font, font12 *Font) (result FileSearch) {
 	result.Cursor.Width = 2
 	result.Cursor.Height = lineHeight
-	result.Cursor.Advance = int32(font.CharacterWidth)
+	result.Cursor.Advance = int32(font14.CharacterWidth)
 	result.Width = 500
 	result.LineHeight = lineHeight
-	result.LineSpacing = (lineHeight - int32(font.Size)) / 2
-	result.Font = font
-
-	result.MaxSearchResults = 5
+	result.LineSpacing = (lineHeight - int32(font14.Size)) / 2
+	result.Font14 = font14
+	result.Font12 = font12
 
 	return
 }
@@ -135,8 +134,7 @@ func (fs *FileSearch) Tick(input Input) {
 	}
 }
 
-func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect) {
-	// @TODO (!important) border around the whole popup
+func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, theme *FileSearchTheme) {
 	inputRect := sdl.Rect{
 		X: parentRect.W/2 - fs.Width/2,
 		Y: parentRect.Y + int32(float32(parentRect.H)*0.15),
@@ -151,27 +149,27 @@ func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect) {
 		H: inputRect.H + int32(len(fs.FoundEntries))*(fs.LineHeight+fs.LineSpacing*2),
 	}, 1)
 
-	DrawRect(renderer, &borderRect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
-	DrawRect(renderer, &inputRect, sdl.Color{R: 13, G: 14, B: 16, A: 255})
-	fs.Cursor.Render(renderer, inputRect)
+	DrawRect(renderer, &borderRect, theme.BorderColor)
+	DrawRect(renderer, &inputRect, theme.InputBackgroundColor)
+	fs.Cursor.Render(renderer, inputRect, theme.CursorColor)
 
 	query := fs.SearchQuery.String()
 	if len(query) > 0 {
-		queryWidth, queryHeight := fs.Font.GetStringSize(query)
+		queryWidth, queryHeight := fs.Font14.GetStringSize(query)
 		queryRect := sdl.Rect{
 			X: inputRect.X + 5,
 			Y: inputRect.Y + (inputRect.H-queryHeight)/2,
 			W: queryWidth,
 			H: queryHeight,
 		}
-		DrawText(renderer, fs.Font, query, &queryRect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		DrawText(renderer, fs.Font14, query, &queryRect, theme.InputTextColor)
 	}
 
-	defaultBgColor := sdl.Color{R: 9, G: 9, B: 1, A: 255}
-	defaultTextColor := sdl.Color{R: 137, G: 145, B: 162, A: 255}
+	defaultBgColor := theme.ResultBackgroundColor
+	defaultTextColor := theme.ResultNameColor
 
-	activeBgColor := sdl.Color{R: 34, G: 35, B: 38, A: 255}
-	activeTextColor := sdl.Color{R: 255, G: 255, B: 255, A: 255}
+	activeBgColor := theme.ResultActiveColor
+	activeTextColor := theme.ResultNameActiveColor
 
 	for index, res := range fs.FoundEntries {
 		entryColor := defaultBgColor
@@ -189,13 +187,22 @@ func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect) {
 		}
 		DrawRect(renderer, &entryRect, entryColor)
 
-		txtWidth, txtHeight := fs.Font.GetStringSize(fs.FileEntries[res].Name)
+		txtWidth, txtHeight := fs.Font14.GetStringSize(fs.FileEntries[res].Name)
 		txtRect := sdl.Rect{
 			X: entryRect.X + 5,
 			Y: entryRect.Y + (entryRect.H-txtHeight)/2,
 			W: txtWidth,
 			H: txtHeight,
 		}
-		DrawText(renderer, fs.Font, fs.FileEntries[res].Name, &txtRect, textColor)
+		DrawText(renderer, fs.Font14, fs.FileEntries[res].Name, &txtRect, textColor)
+
+		pathWidth, pathHeight := fs.Font12.GetStringSize(fs.FileEntries[res].FullPath)
+		pathRect := sdl.Rect{
+			X: entryRect.X + entryRect.W - 5 - pathWidth,
+			Y: entryRect.Y + (entryRect.H-pathHeight)/2,
+			W: pathWidth,
+			H: pathHeight,
+		}
+		DrawText(renderer, fs.Font12, fs.FileEntries[res].FullPath, &pathRect, theme.ResultPathColor)
 	}
 }

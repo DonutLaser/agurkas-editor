@@ -29,27 +29,30 @@ func (bar *StatusBar) Update(window *sdl.Rect) {
 	bar.RemainingRect = bar.Rect
 }
 
-func (bar *StatusBar) Begin(renderer *sdl.Renderer) {
+func (bar *StatusBar) Begin(renderer *sdl.Renderer, theme *StatusBarTheme) {
 	bar.RemainingRect = bar.Rect
-	DrawRect(renderer, &bar.Rect, sdl.Color{R: 48, G: 48, B: 48, A: 255})
+	DrawRect(renderer, &bar.Rect, theme.BackgroundColor)
 }
 
-func (bar *StatusBar) RenderMode(renderer *sdl.Renderer, mode Mode, color sdl.Color, font *Font) {
+func (bar *StatusBar) RenderMode(renderer *sdl.Renderer, mode Mode, font *Font, theme *StatusBarTheme) {
+	color := theme.GetColorForMode(mode)
+
 	width, height := font.GetStringSize(string(mode))
 	bgrect := bar.getRectLeft(width + 16)
 	DrawRect(renderer, &bgrect, color)
 	bar.TriangeImage.Render(renderer, sdl.Point{X: bgrect.X + bgrect.W, Y: bgrect.Y}, color)
 
+	textColor := theme.GetTextColorForMode(mode)
 	txtrect := sdl.Rect{
 		X: bgrect.X + 8,
 		Y: bgrect.Y + (bgrect.H-height)/2,
 		W: width,
 		H: height,
 	}
-	DrawText(renderer, font, string(mode), &txtrect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	DrawText(renderer, font, string(mode), &txtrect, textColor)
 }
 
-func (bar *StatusBar) RenderSubmode(renderer *sdl.Renderer, submode Submode, font *Font) {
+func (bar *StatusBar) RenderSubmode(renderer *sdl.Renderer, submode Submode, font *Font, theme *StatusBarTheme) {
 	if submode == Submode_None {
 		return
 	}
@@ -60,10 +63,10 @@ func (bar *StatusBar) RenderSubmode(renderer *sdl.Renderer, submode Submode, fon
 	rect.Y += (rect.H - height) / 2
 	rect.W = width
 	rect.H = height
-	DrawText(renderer, font, string(submode), &rect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	DrawText(renderer, font, string(submode), &rect, theme.TextColor)
 }
 
-func (bar *StatusBar) RenderProject(renderer *sdl.Renderer, projectname string, filename string, dirty bool, font *Font) {
+func (bar *StatusBar) RenderProject(renderer *sdl.Renderer, projectname string, filename string, dirty bool, font *Font, theme *StatusBarTheme) {
 	if filename == "" {
 		filename = "[untitled]"
 	}
@@ -83,23 +86,21 @@ func (bar *StatusBar) RenderProject(renderer *sdl.Renderer, projectname string, 
 		H: height,
 	}
 
-	color := sdl.Color{R: 255, G: 255, B: 255, A: 255}
+	color := theme.TextColor
 	if dirty {
-		color.R = 213
-		color.G = 41
-		color.B = 65
+		color = theme.DirtyColor
 	}
 
 	DrawText(renderer, font, txt, &rect, color)
 }
 
-func (bar *StatusBar) RenderLineCount(renderer *sdl.Renderer, text string, font *Font) {
+func (bar *StatusBar) RenderLineCount(renderer *sdl.Renderer, text string, font *Font, theme *StatusBarTheme) {
 	width, height := font.GetStringSize(text)
 	rect := bar.getRectRight(width + 8)
 	rect.Y += (rect.H - height) / 2
 	rect.W = width
 	rect.H = height
-	DrawText(renderer, font, text, &rect, sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	DrawText(renderer, font, text, &rect, theme.TextColor)
 }
 
 func (bar *StatusBar) getRectLeft(width int32) (result sdl.Rect) {

@@ -190,12 +190,6 @@ func main() {
 		}
 
 		app.Tick(input)
-
-		renderer.SetDrawColor(20, 21, 24, 255)
-		renderer.Clear()
-
 		app.Render(renderer)
-
-		renderer.Present()
 	}
 }

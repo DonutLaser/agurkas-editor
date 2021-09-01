@@ -1,0 +1,32 @@
+statusbar_bg_color #303030
+statusbar_normal_color #5aa9e6
+statusbar_normal_txt_color #ffffff
+statusbar_insert_color #d52941
+statusbar_insert_txt_color #ffffff
+statusbar_visual_color #f5d547
+statusbar_visual_txt_color #000000
+statusbar_vline_color #498467
+statusbar_vline_txt_color #ffffff
+statusbar_txt_color #ffffff
+statusbar_dirty_color #d52941
+
+buffer_bg_color #141518
+buffer_line_highlight_color #222326
+buffer_txt_color #ffffff
+buffer_cursor_color_match_mode true
+
+gutter_bg_color #0d0e10
+gutter_line_highlight_color #191a1c
+gutter_line_number_inactive_color #8991a2
+gutter_line_number_color_match_mode true
+
+fs_input_bg_color #0d0e10
+fs_border_color #303030
+fs_input_txt_color #ffffff
+fs_cursor_color #5aa9e6
+fs_result_bg_color #090901
+fs_result_active_bg_color #222326
+fs_result_name_color #7d8593
+fs_result_name_active_color #ffffff
+fs_result_path_color #5c626e
+fs_result_path_active_color #5c626e
