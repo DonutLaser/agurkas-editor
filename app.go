@@ -23,11 +23,13 @@ const (
 )
 
 const (
-	Submode_Replace Submode = "replace"
-	Submode_Delete  Submode = "delete"
-	Submode_Goto    Submode = "goto"
-	Submode_Change  Submode = "change"
-	Submode_None    Submode = "none"
+	Submode_Replace  Submode = "replace"
+	Submode_Delete   Submode = "delete"
+	Submode_Goto     Submode = "goto"
+	Submode_Change   Submode = "change"
+	Submode_FindNext Submode = "find next"
+	Submode_FindPrev Submode = "find prev"
+	Submode_None     Submode = "none"
 )
 
 type App struct {
@@ -64,10 +66,6 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
 
 	result.Theme = ParseTheme("./default_theme.atheme")
-	fmt.Println(result.Theme.StatusBar.NormalColor)
-	fmt.Println(result.Theme.StatusBar.InsertColor)
-	fmt.Println(result.Theme.StatusBar.VisualColor)
-	fmt.Println(result.Theme.StatusBar.VisualLineColor)
 
 	result.LineHeight = 18
 
@@ -164,7 +162,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
 	// @TODO (!important) H and L (move to viewport top and down)
-	// @TODO (!important) f and F (find forward and backward)
 	// @TODO (!important) v and V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) ck and cj (change)
@@ -186,6 +183,11 @@ func (app *App) handleInputNormal(input Input) {
 
 	if app.Submode == Submode_Change {
 		app.handleInputSubmodeChange(input)
+		return
+	}
+
+	if app.Submode == Submode_FindNext || app.Submode == Submode_FindPrev {
+		app.handleInputSubmodeFind(input)
 		return
 	}
 
@@ -251,6 +253,15 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MarkCurrentPosition()
 	case '`':
 		app.Buffer.MoveToBookmark()
+	case 'f':
+		app.Submode = Submode_FindNext
+	case 'F':
+		// @TODO (!important) perhaps this is not very useful
+		app.Submode = Submode_FindPrev
+	case ';':
+		app.Buffer.MoveToNextLineQuerySymbol()
+	case ',':
+		app.Buffer.MoveToPrevLineQuerySymbol()
 	}
 }
 
@@ -346,6 +357,23 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 	case 'k':
 		app.Submode = Submode_None
 		app.Buffer.RemoveLines(Direction_Up, 1)
+	}
+}
+
+func (app *App) handleInputSubmodeFind(input Input) {
+	if input.Ctrl || input.Alt {
+		return
+	}
+
+	if input.Escape {
+		app.Submode = Submode_None
+		return
+	}
+
+	if input.TypedCharacter != 0 {
+		forwards := app.Submode == Submode_FindNext
+		app.Buffer.FindInLine(input.TypedCharacter, forwards)
+		app.Submode = Submode_None
 	}
 }
 

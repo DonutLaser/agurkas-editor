@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -28,10 +27,6 @@ func ParseProject(data string) (result Project) {
 	}
 
 	result.Files = ReadDirectory(result.Root, exclude)
-	for _, file := range result.Files {
-		fmt.Println(file)
-	}
-
 	return
 }
 

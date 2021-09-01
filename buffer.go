@@ -28,7 +28,8 @@ type Buffer struct {
 	ScrollY      int32
 	ScrollOffset int32
 
-	BookmarkLine int32
+	BookmarkLine  int32
+	LineFindQuery byte
 
 	Filepath string
 	Dirty    bool
@@ -411,6 +412,36 @@ func (buffer *Buffer) MergeLineBelow() {
 
 func (buffer *Buffer) MarkCurrentPosition() {
 	buffer.BookmarkLine = buffer.Cursor.Line
+}
+
+func (buffer *Buffer) FindInLine(symbol byte, forwards bool) {
+	buffer.LineFindQuery = symbol
+
+	if forwards {
+		buffer.MoveToNextLineQuerySymbol()
+	} else {
+		buffer.MoveToPrevLineQuerySymbol()
+	}
+}
+
+func (buffer *Buffer) MoveToNextLineQuerySymbol() {
+	buffer.MoveRight() // Ignore the query symbol that we are currently standing on
+
+	nextChar := buffer.getNextCharacter()
+	for nextChar != '\n' && nextChar != buffer.LineFindQuery && buffer.GapEnd != len(buffer.Data)-1 {
+		buffer.MoveRight()
+		nextChar = buffer.getNextCharacter()
+	}
+}
+
+func (buffer *Buffer) MoveToPrevLineQuerySymbol() {
+	buffer.MoveLeft() // Ignore the query symbol that we are currently standing on
+
+	nextChar := buffer.getNextCharacter()
+	for nextChar != buffer.LineFindQuery && buffer.Cursor.Column != 0 {
+		buffer.MoveLeft()
+		nextChar = buffer.getNextCharacter()
+	}
 }
 
 func (buffer *Buffer) GetText() []string {
