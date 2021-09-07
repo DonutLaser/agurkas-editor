@@ -1,7 +1,19 @@
 package main
 
+// @TODO (!important) 2 buffers support
+// @TODO (!important) language server
+// @TODO (!important) project selection
+// @TODO (!important) snippets
+// @TODO (!important) task
+// @TODO (!important) syntax highlighting
+// @TODO (!important) intellisense
+// @TODO (!important) surround with
+// @TODO (!important) search file/project
+// @TODO (!important) search and replace file/project
+
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -38,9 +50,7 @@ type App struct {
 	BoldFont14    Font
 
 	WindowRect sdl.Rect
-
-	Theme Theme
-
+	Theme      Theme
 	LineHeight int32
 
 	StatusBar  StatusBar
@@ -50,6 +60,7 @@ type App struct {
 	Mode           Mode
 	Submode        Submode
 	Project        Project
+	Cache          Cache
 	FileSearchOpen bool
 }
 
@@ -64,14 +75,14 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.BoldFont14 = LoadFont("./assets/fonts/consolab.ttf", 14)
 
 	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
-
 	result.Theme = ParseTheme("./default_theme.atheme")
-
 	result.LineHeight = 18
 
 	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
 	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14, &result.RegularFont12)
+	cacheDir, _ := os.UserCacheDir()
+	result.Cache = ParseCache(fmt.Sprintf("%s/agurkas", cacheDir))
 
 	result.Mode = Mode_Normal
 	result.Submode = Submode_None
@@ -104,8 +115,9 @@ func (app *App) Tick(input Input) {
 			if input.TypedCharacter == 's' {
 				app.saveProject()
 			} else if input.TypedCharacter == 'o' {
-				app.openProject()
+				app.openProject("")
 			} else if input.TypedCharacter == 'p' {
+				app.openProjectSearch()
 			}
 
 			return
@@ -165,6 +177,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) v and V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) ck and cj (change)
+	// @TODO (!important) ci and vi and di
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
@@ -388,6 +401,7 @@ func (app *App) createProject(dirPath string) {
 		return
 	}
 
+	app.Cache.Write("project", finalPath)
 	app.openSourceFile(finalPath)
 }
 
@@ -398,8 +412,8 @@ func (app *App) saveProject() {
 	}
 }
 
-func (app *App) openProject() {
-	data, _, success := OpenFile("")
+func (app *App) openProject(path string) {
+	data, _, success := OpenFile(path)
 	if success {
 		app.Project = ParseProject(string(data))
 	}
@@ -414,6 +428,18 @@ func (app *App) openFileSearch() {
 		}
 
 		app.openSourceFile(path)
+	})
+}
+
+func (app *App) openProjectSearch() {
+	app.FileSearchOpen = true
+	app.FileSearch.Open(PathsToFileSearchEntries(app.Cache.Projects), func(path string) {
+		app.FileSearchOpen = false
+		if path == "" {
+			return
+		}
+
+		app.openProject(path)
 	})
 }
 

@@ -47,10 +47,15 @@ func OpenFile(path string) ([]byte, string, bool) {
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return make([]byte, 0), "", false
+		return make([]byte, 0), path, false
 	}
 
 	return data, path, true
+}
+
+func CreateDirectory(path string) {
+	err := os.Mkdir(path, 0755)
+	checkError(err)
 }
 
 func SelectDirectory() (string, bool) {
