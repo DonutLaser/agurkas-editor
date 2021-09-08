@@ -37,7 +37,7 @@ func (bar *StatusBar) Begin(renderer *sdl.Renderer, theme *StatusBarTheme) {
 func (bar *StatusBar) RenderMode(renderer *sdl.Renderer, mode Mode, font *Font, theme *StatusBarTheme) {
 	color := theme.GetColorForMode(mode)
 
-	width, height := font.GetStringSize(string(mode))
+	width := font.GetStringWidth(string(mode))
 	bgrect := bar.getRectLeft(width + 16)
 	DrawRect(renderer, &bgrect, color)
 	bar.TriangeImage.Render(renderer, sdl.Point{X: bgrect.X + bgrect.W, Y: bgrect.Y}, color)
@@ -45,9 +45,9 @@ func (bar *StatusBar) RenderMode(renderer *sdl.Renderer, mode Mode, font *Font, 
 	textColor := theme.GetTextColorForMode(mode)
 	txtrect := sdl.Rect{
 		X: bgrect.X + 8,
-		Y: bgrect.Y + (bgrect.H-height)/2,
+		Y: bgrect.Y + (bgrect.H-int32(font.Size))/2,
 		W: width,
-		H: height,
+		H: int32(font.Size),
 	}
 	DrawText(renderer, font, string(mode), &txtrect, textColor)
 }
@@ -57,12 +57,12 @@ func (bar *StatusBar) RenderSubmode(renderer *sdl.Renderer, submode Submode, fon
 		return
 	}
 
-	width, height := font.GetStringSize(string(submode))
+	width := font.GetStringWidth(string(submode))
 	rect := bar.getRectLeft(width + 5)
 	rect.X += 5
-	rect.Y += (rect.H - height) / 2
+	rect.Y += (rect.H - int32(font.Size)) / 2
 	rect.W = width
-	rect.H = height
+	rect.H = int32(font.Size)
 	DrawText(renderer, font, string(submode), &rect, theme.TextColor)
 }
 
@@ -78,12 +78,12 @@ func (bar *StatusBar) RenderProject(renderer *sdl.Renderer, projectname string, 
 	}
 
 	txt := sb.String()
-	width, height := font.GetStringSize(txt)
+	width := font.GetStringWidth(txt)
 	rect := sdl.Rect{
 		X: bar.Rect.W/2 - width/2,
-		Y: bar.Rect.Y + (bar.Rect.H-height)/2,
+		Y: bar.Rect.Y + (bar.Rect.H-int32(font.Size))/2,
 		W: width,
-		H: height,
+		H: int32(font.Size),
 	}
 
 	color := theme.TextColor
@@ -95,11 +95,11 @@ func (bar *StatusBar) RenderProject(renderer *sdl.Renderer, projectname string, 
 }
 
 func (bar *StatusBar) RenderLineCount(renderer *sdl.Renderer, text string, font *Font, theme *StatusBarTheme) {
-	width, height := font.GetStringSize(text)
+	width := font.GetStringWidth(text)
 	rect := bar.getRectRight(width + 8)
-	rect.Y += (rect.H - height) / 2
+	rect.Y += (rect.H - int32(font.Size)) / 2
 	rect.W = width
-	rect.H = height
+	rect.H = int32(font.Size)
 	DrawText(renderer, font, text, &rect, theme.TextColor)
 }
 

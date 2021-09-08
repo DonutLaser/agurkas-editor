@@ -484,6 +484,12 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 
 	text := buffer.GetText()
 	for index, line := range text {
+		y := int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY
+
+		if y > buffer.Rect.Y+buffer.Rect.H || y+int32(buffer.Font.Size) < buffer.Rect.Y {
+			continue
+		}
+
 		lineNumber := Abs(int(buffer.Cursor.Line) - index)
 		lineNumberColor := theme.Gutter.LineNumberInactiveColor
 		lineNumberOffset := 0
@@ -506,13 +512,13 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 		}
 
 		lineNumberStr := strconv.Itoa(lineNumber)
-		width, height := buffer.Font.GetStringSize(lineNumberStr)
+		width := buffer.Font.GetStringWidth(lineNumberStr)
 		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 		lineNumberRect := sdl.Rect{
 			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
+			Y: int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
 			W: width,
-			H: height,
+			H: int32(buffer.Font.Size),
 		}
 		DrawText(renderer, buffer.Font, lineNumberStr, &lineNumberRect, lineNumberColor)
 
@@ -520,9 +526,8 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 			continue
 		}
 
-		lineWidth, lineHeight := buffer.Font.GetStringSize(line)
+		lineWidth := buffer.Font.GetStringWidth(line)
 		x := gutterRect.W + 5
-		y := int32(index)*buffer.LineSpacing + int32(index)*lineHeight + int32(index+1)*buffer.LineSpacing + buffer.ScrollY
 
 		if buffer.HighlighterFunc != nil {
 			buffer.renderLine(renderer, line, x, y, &theme.Syntax)
@@ -531,7 +536,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 				X: x,
 				Y: y,
 				W: lineWidth,
-				H: lineHeight,
+				H: int32(buffer.Font.Size),
 			}
 
 			DrawText(renderer, buffer.Font, line, &rect, theme.Buffer.TextColor)
@@ -545,12 +550,12 @@ func (buffer *Buffer) renderLine(renderer *sdl.Renderer, line string, leftStart 
 	left := leftStart
 
 	for _, token := range tokens {
-		width, height := buffer.Font.GetStringSize(token.Value)
+		width := buffer.Font.GetStringWidth(token.Value)
 		rect := sdl.Rect{
 			X: left,
 			Y: y,
 			W: width,
-			H: height,
+			H: int32(buffer.Font.Size),
 		}
 		DrawText(renderer, buffer.Font, token.Value, &rect, token.Color)
 

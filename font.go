@@ -25,11 +25,8 @@ func LoadFont(path string, size int) (result Font) {
 	return
 }
 
-func (font *Font) GetStringSize(text string) (int32, int32) {
-	width, height, err := font.Data.SizeUTF8(text)
-	checkError(err)
-
-	return int32(width), int32(height)
+func (font *Font) GetStringWidth(text string) int32 {
+	return int32(len(text) * font.CharacterWidth)
 }
 
 func (font *Font) Unload() {

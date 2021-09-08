@@ -155,12 +155,12 @@ func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, theme
 
 	query := fs.SearchQuery.String()
 	if len(query) > 0 {
-		queryWidth, queryHeight := fs.Font14.GetStringSize(query)
+		queryWidth := fs.Font14.GetStringWidth(query)
 		queryRect := sdl.Rect{
 			X: inputRect.X + 5,
-			Y: inputRect.Y + (inputRect.H-queryHeight)/2,
+			Y: inputRect.Y + (inputRect.H-int32(fs.Font14.Size))/2,
 			W: queryWidth,
-			H: queryHeight,
+			H: int32(fs.Font14.Size),
 		}
 		DrawText(renderer, fs.Font14, query, &queryRect, theme.InputTextColor)
 	}
@@ -187,21 +187,21 @@ func (fs *FileSearch) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, theme
 		}
 		DrawRect(renderer, &entryRect, entryColor)
 
-		txtWidth, txtHeight := fs.Font14.GetStringSize(fs.FileEntries[res].Name)
+		txtWidth := fs.Font14.GetStringWidth(fs.FileEntries[res].Name)
 		txtRect := sdl.Rect{
 			X: entryRect.X + 5,
-			Y: entryRect.Y + (entryRect.H-txtHeight)/2,
+			Y: entryRect.Y + (entryRect.H-int32(fs.Font14.Size))/2,
 			W: txtWidth,
-			H: txtHeight,
+			H: int32(fs.Font14.Size),
 		}
 		DrawText(renderer, fs.Font14, fs.FileEntries[res].Name, &txtRect, textColor)
 
-		pathWidth, pathHeight := fs.Font12.GetStringSize(fs.FileEntries[res].FullPath)
+		pathWidth := fs.Font12.GetStringWidth(fs.FileEntries[res].FullPath)
 		pathRect := sdl.Rect{
 			X: entryRect.X + entryRect.W - 5 - pathWidth,
-			Y: entryRect.Y + (entryRect.H-pathHeight)/2,
+			Y: entryRect.Y + (entryRect.H-int32(fs.Font12.Size))/2,
 			W: pathWidth,
-			H: pathHeight,
+			H: int32(fs.Font12.Size),
 		}
 		DrawText(renderer, fs.Font12, fs.FileEntries[res].FullPath, &pathRect, theme.ResultPathColor)
 	}
