@@ -30,3 +30,10 @@ fs_result_name_color #7d8593
 fs_result_name_active_color #ffffff
 fs_result_path_color #5c626e
 fs_result_path_active_color #5c626e
+
+syntax_base_color #ffffff
+syntax_keyword_color #5aa9e6
+syntax_type_color #f5d547
+syntax_operator_color #498467
+syntax_string_color #d52941
+syntax_comment_color #5c626e

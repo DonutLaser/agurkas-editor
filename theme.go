@@ -55,11 +55,21 @@ type FileSearchTheme struct {
 	ResultPathActiveColor sdl.Color
 }
 
+type SyntaxTheme struct {
+	BaseColor     sdl.Color
+	KeywordColor  sdl.Color
+	TypeColor     sdl.Color
+	OperatorColor sdl.Color
+	StringColor   sdl.Color
+	CommentColor  sdl.Color
+}
+
 type Theme struct {
 	StatusBar  StatusBarTheme
 	Buffer     BufferTheme
 	Gutter     GutterTheme
 	FileSearch FileSearchTheme
+	Syntax     SyntaxTheme
 }
 
 func ParseTheme(path string) (result Theme) {
@@ -85,6 +95,8 @@ func ParseTheme(path string) (result Theme) {
 			parseGutter(key, value, &result.Gutter)
 		} else if strings.HasPrefix(key, "fs") {
 			parseFileSearch(key, value, &result.FileSearch)
+		} else if strings.HasPrefix(key, "syntax") {
+			parseSyntax(key, value, &result.Syntax)
 		}
 	}
 
@@ -223,6 +235,25 @@ func parseFileSearch(key string, value string, theme *FileSearchTheme) {
 		theme.ResultPathActiveColor = hexStringToColor(value)
 	default:
 		log.Printf("Unsupported property for status bar theme: %s = %s", key, value)
+	}
+}
+
+func parseSyntax(key string, value string, theme *SyntaxTheme) {
+	switch key {
+	case "syntax_base_color":
+		theme.BaseColor = hexStringToColor(value)
+	case "syntax_keyword_color":
+		theme.KeywordColor = hexStringToColor(value)
+	case "syntax_type_color":
+		theme.TypeColor = hexStringToColor(value)
+	case "syntax_operator_color":
+		theme.OperatorColor = hexStringToColor(value)
+	case "syntax_string_color":
+		theme.StringColor = hexStringToColor(value)
+	case "syntax_comment_color":
+		theme.CommentColor = hexStringToColor(value)
+	default:
+		log.Printf("Unsupported property for syntax theme: %s = %s", key, value)
 	}
 }
 

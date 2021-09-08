@@ -10,6 +10,7 @@ package main
 // @TODO (!important) surround with
 // @TODO (!important) search file/project
 // @TODO (!important) search and replace file/project
+// @TODO (!important) app.go is lagging already
 
 import (
 	"fmt"

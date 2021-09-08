@@ -31,8 +31,9 @@ type Buffer struct {
 	BookmarkLine  int32
 	LineFindQuery byte
 
-	Filepath string
-	Dirty    bool
+	Filepath        string
+	HighlighterFunc func(line []byte, theme *SyntaxTheme) []TokenInfo
+	Dirty           bool
 }
 
 func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) Buffer {
@@ -76,6 +77,10 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 	}
 
 	buffer.TotalLines = len(buffer.GetText())
+
+	if strings.HasSuffix(buffer.Filepath, ".go") {
+		buffer.HighlighterFunc = HighlightLineGolang
+	}
 }
 
 func (buffer *Buffer) Insert(char byte) {
@@ -515,15 +520,41 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 			continue
 		}
 
-		width, height = buffer.Font.GetStringSize(line)
-		rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
-			X: gutterRect.W + 5,
-			Y: int32(index)*buffer.LineSpacing + int32(index)*height + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
+		lineWidth, lineHeight := buffer.Font.GetStringSize(line)
+		x := gutterRect.W + 5
+		y := int32(index)*buffer.LineSpacing + int32(index)*lineHeight + int32(index+1)*buffer.LineSpacing + buffer.ScrollY
+
+		if buffer.HighlighterFunc != nil {
+			buffer.renderLine(renderer, line, x, y, &theme.Syntax)
+		} else {
+			rect := sdl.Rect{ // @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
+				X: x,
+				Y: y,
+				W: lineWidth,
+				H: lineHeight,
+			}
+
+			DrawText(renderer, buffer.Font, line, &rect, theme.Buffer.TextColor)
+		}
+	}
+}
+
+func (buffer *Buffer) renderLine(renderer *sdl.Renderer, line string, leftStart int32, y int32, theme *SyntaxTheme) {
+	tokens := buffer.HighlighterFunc([]byte(line), theme)
+
+	left := leftStart
+
+	for _, token := range tokens {
+		width, height := buffer.Font.GetStringSize(token.Value)
+		rect := sdl.Rect{
+			X: left,
+			Y: y,
 			W: width,
 			H: height,
 		}
+		DrawText(renderer, buffer.Font, token.Value, &rect, token.Color)
 
-		DrawText(renderer, buffer.Font, line, &rect, theme.Buffer.TextColor)
+		left += width
 	}
 }
 
