@@ -1,9 +1,6 @@
 package main
 
 import (
-	"os"
-	"runtime/pprof"
-
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -148,11 +145,6 @@ func main() {
 	app := Init(renderer, windowWidth, windowHeight)
 	input := Input{}
 
-	profile, err := os.Create("profile")
-	checkError(err)
-
-	pprof.StartCPUProfile(profile)
-
 	running := true
 	for running {
 		input.Clear()
@@ -200,6 +192,4 @@ func main() {
 		app.Tick(input)
 		app.Render(renderer)
 	}
-
-	pprof.StopCPUProfile()
 }

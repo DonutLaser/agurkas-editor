@@ -2,15 +2,15 @@ package main
 
 // @TODO (!important) 2 buffers support
 // @TODO (!important) language server
-// @TODO (!important) project selection
 // @TODO (!important) snippets
 // @TODO (!important) task
-// @TODO (!important) syntax highlighting
 // @TODO (!important) intellisense
 // @TODO (!important) surround with
 // @TODO (!important) search file/project
 // @TODO (!important) search and replace file/project
-// @TODO (!important) app.go is lagging already
+// @TODO (!important) builtin todos
+// @TODO (!important) language switching
+// @TODO (!important) auto formatting
 
 import (
 	"fmt"
@@ -130,6 +130,8 @@ func (app *App) Tick(input Input) {
 			app.saveSourceFile()
 		} else if input.TypedCharacter == 'o' {
 			app.openSourceFile("")
+		} else if input.TypedCharacter == 'O' {
+			app.showFileInExplorer()
 		}
 
 		return
@@ -458,4 +460,8 @@ func (app *App) openSourceFile(path string) {
 		app.Mode = Mode_Normal
 		app.Buffer.SetData(data, filepath)
 	}
+}
+
+func (app *App) showFileInExplorer() {
+	RunCommand("explorer", "", "/select,", app.Buffer.Filepath)
 }
