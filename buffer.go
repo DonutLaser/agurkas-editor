@@ -290,8 +290,7 @@ func (buffer *Buffer) MoveRight() {
 }
 
 func (buffer *Buffer) MoveUp() {
-	// @TODO (!important) remember column
-	endColumn := buffer.Cursor.Column
+	endColumn := int32(Max(int(buffer.Cursor.Column), int(buffer.Cursor.LastColumn)))
 
 	if buffer.Cursor.Line == 0 {
 		return
@@ -317,17 +316,18 @@ func (buffer *Buffer) MoveUp() {
 			buffer.moveLeftInternal()
 		}
 
+		buffer.Cursor.LastColumn = endColumn
+
 		buffer.maybeScrollUp()
 	}
 }
 
 func (buffer *Buffer) MoveDown() {
-	// @TODO (!important) remember column
 	if buffer.Cursor.Line == int32(buffer.TotalLines)-1 {
 		return
 	}
 
-	endColumn := buffer.Cursor.Column
+	endColumn := Max(int(buffer.Cursor.Column), int(buffer.Cursor.LastColumn))
 	lineSize := buffer.getCurrentLineSize() // @TODO (!important) this might not be needed, we can just check if the next symbol will be newline
 
 	for buffer.Cursor.Column < lineSize {
@@ -344,6 +344,8 @@ func (buffer *Buffer) MoveDown() {
 		for i := 0; i < int(endColumn); i += 1 {
 			buffer.MoveRight()
 		}
+
+		buffer.Cursor.LastColumn = int32(endColumn)
 
 		buffer.maybeScrollDown()
 	}
@@ -626,6 +628,7 @@ func (buffer *Buffer) moveLeftInternal() {
 	buffer.GapEnd -= 1
 
 	buffer.Cursor.Column -= 1
+	buffer.Cursor.LastColumn = 0
 }
 
 func (buffer *Buffer) moveRightInternal() {
@@ -637,6 +640,7 @@ func (buffer *Buffer) moveRightInternal() {
 	buffer.GapEnd += 1
 
 	buffer.Cursor.Column += 1
+	buffer.Cursor.LastColumn = 0
 }
 
 func (buffer *Buffer) getCurrentLineSize() (result int32) {

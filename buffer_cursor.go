@@ -5,6 +5,7 @@ import "github.com/veandco/go-sdl2/sdl"
 type BufferCursor struct {
 	Line        int32
 	Column      int32
+	LastColumn  int32
 	WidthNormal int32
 	WidthInsert int32
 	Height      int32
