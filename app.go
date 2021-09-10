@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -60,6 +61,7 @@ type App struct {
 
 	Mode           Mode
 	Submode        Submode
+	AmountModifier strings.Builder
 	Project        Project
 	Cache          Cache
 	FileSearchOpen bool
@@ -205,11 +207,35 @@ func (app *App) handleInputNormal(input Input) {
 		return
 	}
 
+	if input.Escape {
+		app.AmountModifier.Reset()
+		return
+	}
+
+	if input.TypedCharacter >= '1' && input.TypedCharacter <= '9' || input.TypedCharacter == '0' && app.AmountModifier.Len() > 0 {
+		app.AmountModifier.WriteByte(input.TypedCharacter)
+		return
+	}
+
 	switch input.TypedCharacter {
 	case 'j':
-		app.Buffer.MoveDown()
+		if app.AmountModifier.Len() > 0 {
+			amount, _ := strconv.Atoi(app.AmountModifier.String())
+			app.AmountModifier.Reset()
+
+			app.Buffer.MoveDownByLines(amount)
+		} else {
+			app.Buffer.MoveDown()
+		}
 	case 'k':
-		app.Buffer.MoveUp()
+		if app.AmountModifier.Len() > 0 {
+			amount, _ := strconv.Atoi(app.AmountModifier.String())
+			app.AmountModifier.Reset()
+
+			app.Buffer.MoveUpByLines(amount)
+		} else {
+			app.Buffer.MoveUp()
+		}
 	case 'h':
 		app.Buffer.MoveLeft()
 	case 'H':
@@ -255,7 +281,13 @@ func (app *App) handleInputNormal(input Input) {
 	case 'g':
 		app.Submode = Submode_Goto
 	case 'G':
-		app.Buffer.MoveToBufferEnd()
+		if app.AmountModifier.Len() > 0 {
+			amount, _ := strconv.Atoi(app.AmountModifier.String())
+			app.AmountModifier.Reset()
+			app.Buffer.MoveToLine(int32(amount))
+		} else {
+			app.Buffer.MoveToBufferEnd()
+		}
 	case 'J':
 		app.Buffer.MergeLineBelow()
 	case 'r':

@@ -363,6 +363,19 @@ func (buffer *Buffer) MoveDownByLines(lines int) {
 	}
 }
 
+func (buffer *Buffer) MoveToLine(line int32) {
+	// Line - 1 because line starts at 1, but cursor line starts at 0
+	if buffer.Cursor.Line > line-1 {
+		for buffer.Cursor.Line > line-1 {
+			buffer.MoveUp()
+		}
+	} else {
+		for buffer.Cursor.Line < line-1 {
+			buffer.MoveDown()
+		}
+	}
+}
+
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToStartOfLine() {
 	for buffer.Cursor.Column > 0 {
