@@ -38,7 +38,8 @@ func (bar *StatusBar) RenderMode(renderer *sdl.Renderer, mode Mode, font *Font, 
 	color := theme.GetColorForMode(mode)
 
 	width := font.GetStringWidth(string(mode))
-	bgrect := bar.getRectLeft(width + 16)
+	bgrect := bar.getRectLeft(width + 16 + bar.TriangeImage.Width)
+	bgrect.W -= bar.TriangeImage.Width
 	DrawRect(renderer, &bgrect, color)
 	bar.TriangeImage.Render(renderer, sdl.Point{X: bgrect.X + bgrect.W, Y: bgrect.Y}, color)
 
