@@ -13,8 +13,6 @@ package main
 // @TODO (!important) auto formatting
 
 // @NEXT ctrl + backspace in insert mode
-// @NEXT backspace in filesearch
-// @NEXT buffer utilities
 // @NEXT think about how to make a more scalable and maintainable version of gap buffer
 // @NEXT notifications
 

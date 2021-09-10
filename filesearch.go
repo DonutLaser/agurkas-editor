@@ -127,10 +127,22 @@ func (fs *FileSearch) Tick(input Input) {
 		return
 	}
 
-	if input.Ctrl && input.Backspace {
-		fs.Cursor.Column = 0
-		fs.SearchQuery.Reset()
-		fs.updateSearchResults()
+	if input.Backspace {
+		if input.Ctrl {
+			fs.Cursor.Column = 0
+			fs.SearchQuery.Reset()
+			fs.updateSearchResults()
+		} else if fs.Cursor.Column > 0 {
+			fs.Cursor.Column -= 1
+			str := fs.SearchQuery.String()
+			fs.SearchQuery.Reset()
+
+			str = str[:len(str)-1]
+			fs.SearchQuery.WriteString(str)
+
+			fs.updateSearchResults()
+		}
+
 		return
 	}
 
