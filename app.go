@@ -180,6 +180,8 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) ck and cj (change)
 	// @TODO (!important) ci and vi and di
+	// @TODO (!important) daw
+	// @TODO (!important) vaf
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
