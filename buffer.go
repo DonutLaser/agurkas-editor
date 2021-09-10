@@ -149,23 +149,6 @@ func (buffer *Buffer) ReplaceCurrentCharacter(char byte) {
 	buffer.Dirty = true
 }
 
-// @TODO (!important) write tests for this
-func (buffer *Buffer) InsertNewLineBelow() {
-	buffer.MoveToEndOfLine()
-	buffer.Insert('\n')
-
-	buffer.Dirty = true
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) InsertNewLineAbove() {
-	buffer.MoveToStartOfLine()
-	buffer.Insert('\n')
-	buffer.MoveUp()
-
-	buffer.Dirty = true
-}
-
 func (buffer *Buffer) RemoveBefore() {
 	if buffer.GapStart == 0 {
 		return
@@ -220,42 +203,6 @@ func (buffer *Buffer) RemoveCurrentLine() {
 	buffer.Dirty = true
 }
 
-// @TODO (!important) write tests for thi
-func (buffer *Buffer) RemoveLines(direction Direction, count int) {
-	if direction == Direction_Up {
-		buffer.RemoveCurrentLine()
-
-		for i := 0; i < count; i += 1 {
-			if buffer.Cursor.Line == 0 {
-				break
-			}
-
-			buffer.MoveUp()
-			buffer.RemoveCurrentLine()
-		}
-
-		return
-	}
-
-	buffer.RemoveCurrentLine()
-	for i := 0; i < count; i += 1 {
-		buffer.RemoveCurrentLine()
-	}
-
-	buffer.Dirty = true
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) RemoveRemainingLine() {
-	char := buffer.getNextCharacter()
-	for char != '\n' && buffer.GapEnd != len(buffer.Data)-1 {
-		buffer.RemoveAfter()
-		char = buffer.getNextCharacter()
-	}
-
-	buffer.Dirty = true
-}
-
 func (buffer *Buffer) ChangeCurrentLine() {
 	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
 		buffer.RemoveAfter()
@@ -265,11 +212,6 @@ func (buffer *Buffer) ChangeCurrentLine() {
 		buffer.RemoveBefore()
 	}
 
-	buffer.Dirty = true
-}
-
-func (buffer *Buffer) ChangeRemainingLine() {
-	buffer.RemoveRemainingLine()
 	buffer.Dirty = true
 }
 
@@ -351,59 +293,6 @@ func (buffer *Buffer) MoveDown() {
 	}
 }
 
-func (buffer *Buffer) MoveUpByLines(lines int) {
-	for i := 0; i < lines; i += 1 {
-		buffer.MoveUp()
-	}
-}
-
-func (buffer *Buffer) MoveDownByLines(lines int) {
-	for i := 0; i < lines; i += 1 {
-		buffer.MoveDown()
-	}
-}
-
-func (buffer *Buffer) MoveToLine(line int32) {
-	// Line - 1 because line starts at 1, but cursor line starts at 0
-	if buffer.Cursor.Line > line-1 {
-		for buffer.Cursor.Line > line-1 {
-			buffer.MoveUp()
-		}
-	} else {
-		for buffer.Cursor.Line < line-1 {
-			buffer.MoveDown()
-		}
-	}
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveToStartOfLine() {
-	for buffer.Cursor.Column > 0 {
-		buffer.MoveLeft()
-	}
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveToEndOfLine() {
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
-		buffer.MoveRight()
-	}
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveToBufferStart() {
-	for buffer.Cursor.Line > 0 {
-		buffer.MoveUp()
-	}
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveToBufferEnd() {
-	for buffer.Cursor.Line < int32(buffer.TotalLines)-1 {
-		buffer.MoveDown()
-	}
-}
-
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToBookmark() {
 	if buffer.BookmarkLine < buffer.Cursor.Line {
@@ -419,85 +308,8 @@ func (buffer *Buffer) MoveToBookmark() {
 	}
 }
 
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveRightToWordStart(ignorePunctuation bool) {
-	if !ignorePunctuation {
-		for !isPunctuation(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
-			buffer.MoveRight()
-		}
-	} else {
-		for !isWhitespace(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
-			buffer.MoveRight()
-		}
-	}
-
-	buffer.MoveRight()
-}
-
-// @TODO (!important) write tests for this
-func (buffer *Buffer) MoveLeftToWordStart(ignorePunctuation bool) {
-	buffer.MoveLeft()
-
-	if !ignorePunctuation {
-		for !isPunctuation(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
-			buffer.MoveLeft()
-		}
-	} else {
-		for !isWhitespace(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
-			buffer.MoveLeft()
-		}
-	}
-}
-
-// @TODO (!important) write tests for this
-// @TODO (!important) improve: remove all white from the next line as well
-func (buffer *Buffer) MergeLineBelow() {
-	buffer.MoveToEndOfLine()
-
-	if buffer.GapEnd == len(buffer.Data)-1 {
-		return
-	}
-
-	// We are guaranteed to be removing a new line here
-	buffer.RemoveAfter()
-	buffer.Insert(' ')
-	buffer.MoveLeft()
-
-	buffer.Dirty = true
-}
-
 func (buffer *Buffer) MarkCurrentPosition() {
 	buffer.BookmarkLine = buffer.Cursor.Line
-}
-
-func (buffer *Buffer) FindInLine(symbol byte, forwards bool) {
-	buffer.LineFindQuery = symbol
-
-	if forwards {
-		buffer.MoveToNextLineQuerySymbol()
-	} else {
-		buffer.MoveToPrevLineQuerySymbol()
-	}
-}
-
-func (buffer *Buffer) MoveToNextLineQuerySymbol() {
-	buffer.MoveRight() // Ignore the query symbol that we are currently standing on
-
-	nextChar := buffer.getNextCharacter()
-	for nextChar != '\n' && nextChar != buffer.LineFindQuery && buffer.GapEnd != len(buffer.Data)-1 {
-		buffer.MoveRight()
-		nextChar = buffer.getNextCharacter()
-	}
-}
-
-func (buffer *Buffer) MoveToPrevLineQuerySymbol() {
-	buffer.MoveLeft() // Ignore the query symbol that we are currently standing on
-
-	nextChar := buffer.getNextCharacter()
-	for nextChar != buffer.LineFindQuery && buffer.Cursor.Column != 0 {
-		buffer.MoveLeft()
-		nextChar = buffer.getNextCharacter()
-	}
 }
 
 func (buffer *Buffer) GetText() []string {
@@ -524,14 +336,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 	}
 	DrawRect(renderer, &gutterRect, theme.Gutter.BackgroundColor)
 
-	var cursorColor sdl.Color
-	if theme.Buffer.CursorColorMatchModeColor {
-		cursorColor = theme.GetColorForMode(mode)
-	} else {
-		cursorColor = theme.Buffer.CursorColor
-	}
-
-	buffer.Cursor.Render(renderer, mode, cursorColor, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
+	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
 
 	text := buffer.GetText()
 	for index, line := range text {
@@ -541,37 +346,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 			continue
 		}
 
-		lineNumber := Abs(int(buffer.Cursor.Line) - index)
-		lineNumberColor := theme.Gutter.LineNumberInactiveColor
-		lineNumberOffset := 0
-		if lineNumber == 0 {
-			lineNumber = index + 1
-			lineNumberOffset = 10
-			if theme.Gutter.LineNumberMatchModeColor {
-				lineNumberColor = cursorColor
-			} else {
-				lineNumberColor = theme.Gutter.LineNumberActiveColor
-			}
-
-			numberHighlightRect := sdl.Rect{
-				X: gutterRect.X,
-				Y: buffer.Cursor.Line*buffer.Cursor.Height + buffer.ScrollY,
-				W: gutterRect.W,
-				H: buffer.Cursor.Height,
-			}
-			DrawRect(renderer, &numberHighlightRect, theme.Gutter.LineHighlightColor)
-		}
-
-		lineNumberStr := strconv.Itoa(lineNumber)
-		width := buffer.Font.GetStringWidth(lineNumberStr)
-		// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
-		lineNumberRect := sdl.Rect{
-			X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-			Y: int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
-			W: width,
-			H: int32(buffer.Font.Size),
-		}
-		DrawText(renderer, buffer.Font, lineNumberStr, &lineNumberRect, lineNumberColor)
+		buffer.renderLineNumber(renderer, &gutterRect, index, theme)
 
 		if len(line) == 0 {
 			continue
@@ -593,6 +368,40 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 			DrawText(renderer, buffer.Font, line, &rect, theme.Buffer.TextColor)
 		}
 	}
+}
+
+func (buffer *Buffer) renderLineNumber(renderer *sdl.Renderer, gutterRect *sdl.Rect, index int, theme *Theme) {
+	lineNumber := Abs(int(buffer.Cursor.Line) - index)
+	lineNumberColor := theme.Gutter.LineNumberInactiveColor
+	lineNumberOffset := 0
+	if lineNumber == 0 {
+		lineNumber = index + 1
+		lineNumberOffset = 10
+		if theme.Gutter.LineNumberMatchModeColor {
+			lineNumberColor = buffer.Cursor.Color
+		} else {
+			lineNumberColor = theme.Gutter.LineNumberActiveColor
+		}
+
+		numberHighlightRect := sdl.Rect{
+			X: gutterRect.X,
+			Y: buffer.Cursor.Line*buffer.Cursor.Height + buffer.ScrollY,
+			W: gutterRect.W,
+			H: buffer.Cursor.Height,
+		}
+		DrawRect(renderer, &numberHighlightRect, theme.Gutter.LineHighlightColor)
+	}
+
+	lineNumberStr := strconv.Itoa(lineNumber)
+	width := buffer.Font.GetStringWidth(lineNumberStr)
+	// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
+	lineNumberRect := sdl.Rect{
+		X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
+		Y: int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
+		W: width,
+		H: int32(buffer.Font.Size),
+	}
+	DrawText(renderer, buffer.Font, lineNumberStr, &lineNumberRect, lineNumberColor)
 }
 
 func (buffer *Buffer) renderLine(renderer *sdl.Renderer, line string, leftStart int32, y int32, theme *SyntaxTheme) {

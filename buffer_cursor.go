@@ -10,9 +10,10 @@ type BufferCursor struct {
 	WidthInsert int32
 	Height      int32
 	Advance     int32
+	Color       sdl.Color
 }
 
-func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.Color, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
+func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
 	lineHighlightRect := sdl.Rect{
 		X: gutterWidth,
 		Y: cursor.Line*cursor.Height + scrollOffsetY,
@@ -32,7 +33,7 @@ func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, color sdl.
 		W: width,
 		H: cursor.Height,
 	}
-	DrawRect(renderer, &cursorRect, color)
+	DrawRect(renderer, &cursorRect, cursor.Color)
 }
 
 func (cursor *BufferCursor) GetBottom() int32 {

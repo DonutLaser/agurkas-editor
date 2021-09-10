@@ -12,6 +12,12 @@ package main
 // @TODO (!important) language switching
 // @TODO (!important) auto formatting
 
+// @NEXT ctrl + backspace in insert mode
+// @NEXT backspace in filesearch
+// @NEXT buffer utilities
+// @NEXT think about how to make a more scalable and maintainable version of gap buffer
+// @NEXT notifications
+
 import (
 	"fmt"
 	"os"
@@ -87,7 +93,7 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	cacheDir, _ := os.UserCacheDir()
 	result.Cache = ParseCache(fmt.Sprintf("%s/agurkas", cacheDir))
 
-	result.Mode = Mode_Normal
+	result.startNormalMode()
 	result.Submode = Submode_None
 
 	return
@@ -246,22 +252,22 @@ func (app *App) handleInputNormal(input Input) {
 	case 'L':
 		app.Buffer.MoveDownByLines(32)
 	case 'i':
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 	case 'I':
 		// @TODO (!important) move to the first non white space character in the line
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 		app.Buffer.MoveToStartOfLine()
 	case 'a':
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 		app.Buffer.MoveRight()
 	case 'A':
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 		app.Buffer.MoveToEndOfLine()
 	case 'o':
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 		app.Buffer.InsertNewLineBelow()
 	case 'O':
-		app.Mode = Mode_Insert
+		app.startInsertMode()
 		app.Buffer.InsertNewLineAbove()
 	case 'x':
 		app.Buffer.RemoveAfter()
@@ -298,8 +304,8 @@ func (app *App) handleInputNormal(input Input) {
 	case 'c':
 		app.Submode = Submode_Change
 	case 'C':
+		app.startInsertMode()
 		app.Buffer.ChangeRemainingLine()
-		app.Mode = Mode_Insert
 	case 'm':
 		app.Buffer.MarkCurrentPosition()
 	case '`':
@@ -327,7 +333,7 @@ func (app *App) handleInputInsert(input Input) {
 	}
 
 	if input.Escape {
-		app.Mode = Mode_Normal
+		app.startNormalMode()
 		return
 	}
 
@@ -518,4 +524,22 @@ func (app *App) openSourceFile(path string) {
 
 func (app *App) showFileInExplorer() {
 	RunCommand("explorer", "", "/select,", app.Buffer.Filepath)
+}
+
+func (app *App) startInsertMode() {
+	app.Mode = Mode_Insert
+	if app.Theme.Buffer.CursorColorMatchModeColor {
+		app.Buffer.Cursor.Color = app.Theme.StatusBar.InsertColor
+	} else {
+		app.Buffer.Cursor.Color = app.Theme.Buffer.CursorColor
+	}
+}
+
+func (app *App) startNormalMode() {
+	app.Mode = Mode_Normal
+	if app.Theme.Buffer.CursorColorMatchModeColor {
+		app.Buffer.Cursor.Color = app.Theme.StatusBar.NormalColor
+	} else {
+		app.Buffer.Cursor.Color = app.Theme.Buffer.CursorColor
+	}
 }
