@@ -176,7 +176,6 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) H and L (move to viewport top and down)
 	// @TODO (!important) v and V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) ck and cj (change)
@@ -397,16 +396,35 @@ func (app *App) handleInputSubmodeDelete(input Input) {
 		return
 	}
 
+	if input.TypedCharacter >= '1' && input.TypedCharacter <= '9' || input.TypedCharacter == '0' && app.AmountModifier.Len() > 0 {
+		app.AmountModifier.WriteByte(input.TypedCharacter)
+		return
+	}
+
 	switch input.TypedCharacter {
 	case 'd':
 		app.Buffer.RemoveCurrentLine()
 		app.Submode = Submode_None
 	case 'j':
+		amount := 1
+		if app.AmountModifier.Len() > 0 {
+			number, _ := strconv.Atoi(app.AmountModifier.String())
+			amount = number
+			app.AmountModifier.Reset()
+		}
+
+		app.Buffer.RemoveLines(Direction_Down, amount)
 		app.Submode = Submode_None
-		app.Buffer.RemoveLines(Direction_Down, 1)
 	case 'k':
+		amount := 1
+		if app.AmountModifier.Len() > 0 {
+			number, _ := strconv.Atoi(app.AmountModifier.String())
+			amount = number
+			app.AmountModifier.Reset()
+		}
+
 		app.Submode = Submode_None
-		app.Buffer.RemoveLines(Direction_Up, 1)
+		app.Buffer.RemoveLines(Direction_Up, amount)
 	}
 }
 
