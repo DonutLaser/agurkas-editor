@@ -212,8 +212,12 @@ func (app *App) handleInputNormal(input Input) {
 		app.Buffer.MoveUp()
 	case 'h':
 		app.Buffer.MoveLeft()
+	case 'H':
+		app.Buffer.MoveUpByLines(32)
 	case 'l':
 		app.Buffer.MoveRight()
+	case 'L':
+		app.Buffer.MoveDownByLines(32)
 	case 'i':
 		app.Mode = Mode_Insert
 	case 'I':

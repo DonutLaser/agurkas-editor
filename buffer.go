@@ -349,6 +349,18 @@ func (buffer *Buffer) MoveDown() {
 	}
 }
 
+func (buffer *Buffer) MoveUpByLines(lines int) {
+	for i := 0; i < lines; i += 1 {
+		buffer.MoveUp()
+	}
+}
+
+func (buffer *Buffer) MoveDownByLines(lines int) {
+	for i := 0; i < lines; i += 1 {
+		buffer.MoveDown()
+	}
+}
+
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToStartOfLine() {
 	for buffer.Cursor.Column > 0 {
