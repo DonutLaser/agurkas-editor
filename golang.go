@@ -165,17 +165,3 @@ func HighlightLineGolang(line []byte, theme *SyntaxTheme) (result []TokenInfo) {
 
 	return
 }
-
-func isAlphaNumeric(symbol byte) bool {
-	return symbol >= 'a' && symbol <= 'z' || symbol >= 'A' && symbol <= 'Z' || symbol >= '0' && symbol <= '9' || symbol == '_' || symbol == '.'
-}
-
-func isStringInArray(array []string, value string) bool {
-	for _, item := range array {
-		if item == value {
-			return true
-		}
-	}
-
-	return false
-}

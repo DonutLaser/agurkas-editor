@@ -1,0 +1,2 @@
+root: W:\agurkas
+exclude: .vscode,assets,go.sum,go.mod,.git

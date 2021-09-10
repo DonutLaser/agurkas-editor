@@ -71,6 +71,7 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 	buffer.Dirty = false
 	buffer.Cursor.Column = 0
 	buffer.Cursor.Line = 0
+	buffer.ScrollY = 0
 
 	for i := 16; i < len(buffer.Data); i += 1 {
 		buffer.Data[i] = cleaned[i-16]
@@ -78,16 +79,19 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 
 	buffer.TotalLines = len(buffer.GetText())
 
+	buffer.HighlighterFunc = nil
 	if strings.HasSuffix(buffer.Filepath, ".go") {
 		buffer.HighlighterFunc = HighlightLineGolang
+	} else if strings.HasSuffix(buffer.Filepath, ".atheme") {
+		buffer.HighlighterFunc = HighlightLineTheme
 	}
 }
 
 func (buffer *Buffer) Insert(char byte) {
-	if char != '\t' {
-		buffer.Data[buffer.GapStart] = char
-		buffer.GapStart += 1
-	} else {
+	prevChar := buffer.getPrevCharacter()
+	nextChar := buffer.getNextCharacter()
+
+	if char == '\t' {
 		// @TODO (!important) write tests for this
 		count := 4 - buffer.Cursor.Column%4
 		// @TODO (!important) temporary, should correctly handle tabs
@@ -96,15 +100,35 @@ func (buffer *Buffer) Insert(char byte) {
 		}
 
 		return
-	}
-
-	if char == '\n' {
-		buffer.Cursor.Column = 0
-		buffer.Cursor.Line += 1
-		buffer.TotalLines += 1
-		buffer.maybeScrollDown()
 	} else {
+		buffer.Data[buffer.GapStart] = char
+		buffer.GapStart += 1
 		buffer.Cursor.Column += 1
+
+		if char == '\n' {
+			buffer.Cursor.Column = 0
+			buffer.Cursor.Line += 1
+			buffer.TotalLines += 1
+
+			pair := getSymbolPair(prevChar)
+			if pair != 0 && pair != '"' && pair != '\'' && nextChar == pair {
+				buffer.Data[buffer.GapStart] = char
+				buffer.GapStart += 1
+
+				buffer.Cursor.Line += 1
+				buffer.TotalLines += 1
+
+				buffer.MoveUp()
+			}
+
+			buffer.maybeScrollDown()
+		} else {
+			pair := getSymbolPair(char)
+			if pair != 0 {
+				buffer.Insert(pair)
+				buffer.MoveLeft()
+			}
+		}
 	}
 
 	if buffer.GapEnd-buffer.GapStart == 1 {
@@ -371,11 +395,11 @@ func (buffer *Buffer) MoveToBookmark() {
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveRightToWordStart(ignorePunctuation bool) {
 	if !ignorePunctuation {
-		for !buffer.isPunctuationCharacter(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+		for !isPunctuation(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
 			buffer.MoveRight()
 		}
 	} else {
-		for !buffer.isWhitespaceCharacter(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+		for !isWhitespace(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
 			buffer.MoveRight()
 		}
 	}
@@ -388,11 +412,11 @@ func (buffer *Buffer) MoveLeftToWordStart(ignorePunctuation bool) {
 	buffer.MoveLeft()
 
 	if !ignorePunctuation {
-		for !buffer.isPunctuationCharacter(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+		for !isPunctuation(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
 			buffer.MoveLeft()
 		}
 	} else {
-		for !buffer.isWhitespaceCharacter(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+		for !isWhitespace(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
 			buffer.MoveLeft()
 		}
 	}
@@ -670,12 +694,4 @@ func (buffer *Buffer) maybeScrollUp() {
 	if diff < 0 {
 		buffer.ScrollY = int32(Min(int(buffer.ScrollY-diff), 0))
 	}
-}
-
-func (buffer *Buffer) isPunctuationCharacter(char byte) bool {
-	return (char >= 33 && char < 47) || (char >= 58 && char <= 64) || (char >= 91 && char <= 94) || char == '`' || (char >= 123 && char <= 126) || buffer.isWhitespaceCharacter(char)
-}
-
-func (buffer *Buffer) isWhitespaceCharacter(char byte) bool {
-	return char == '\n' || char == '\t' || char == ' '
 }

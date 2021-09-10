@@ -137,8 +137,6 @@ func (app *App) Tick(input Input) {
 		return
 	}
 
-	// @TODO (!important) ctrl + shift + o command
-	// @TODO (!important) ctrl + alt + p
 	switch app.Mode {
 	case Mode_Normal:
 		app.handleInputNormal(input)

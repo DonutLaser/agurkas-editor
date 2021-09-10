@@ -28,6 +28,7 @@ type FileSearch struct {
 	CloseCallback func(string)
 
 	altWasPressed bool
+	firstTime     bool
 }
 
 func PathsToFileSearchEntries(paths []string) (result []FileSearchEntry) {
@@ -55,13 +56,21 @@ func CreateFileSearch(lineHeight int32, font14 *Font, font12 *Font) (result File
 }
 
 func (fs *FileSearch) Open(availableFiles []FileSearchEntry, onClose func(string)) {
-	fs.SelectionIndex = -1
+	fs.SelectionIndex = 0
 	fs.Cursor.Column = 0
 	fs.SearchQuery.Reset()
 
 	fs.FileEntries = availableFiles
-	fs.FoundEntries = make([]int, 0)
+
+	size := Min(len(fs.FileEntries), 5)
+	fs.FoundEntries = make([]int, size)
+	for i := 0; i < size; i += 1 {
+		fs.FoundEntries[i] = i
+	}
+
 	fs.CloseCallback = onClose
+
+	fs.firstTime = true
 }
 
 func (fs *FileSearch) Close() {
@@ -102,9 +111,14 @@ func (fs *FileSearch) Tick(input Input) {
 
 		return
 	} else if fs.altWasPressed {
-		fs.altWasPressed = false
-		if len(fs.FoundEntries) > 0 {
-			fs.Submit()
+		if !fs.firstTime {
+			fs.altWasPressed = false
+			if len(fs.FoundEntries) > 0 {
+				fs.Submit()
+			}
+		} else {
+			fs.firstTime = false
+			fs.altWasPressed = false
 		}
 	}
 

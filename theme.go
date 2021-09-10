@@ -256,29 +256,3 @@ func parseSyntax(key string, value string, theme *SyntaxTheme) {
 		log.Printf("Unsupported property for syntax theme: %s = %s", key, value)
 	}
 }
-
-func hexStringToColor(color string) (result sdl.Color) {
-	result.A = 255
-	result.R = hexToByte(color[1])<<4 + hexToByte(color[2])
-	result.G = hexToByte(color[3])<<4 + hexToByte(color[4])
-	result.B = hexToByte(color[5])<<4 + hexToByte(color[6])
-
-	return
-}
-
-func stringToBool(str string) bool {
-	return str == "true"
-}
-
-func hexToByte(b byte) byte {
-	switch {
-	case b >= '0' && b <= '9':
-		return b - '0'
-	case b >= 'a' && b <= 'f':
-		return b - 'a' + 10
-	case b >= 'A' && b <= 'F':
-		return b - 'A' + 10
-	}
-
-	return 0
-}

@@ -35,5 +35,5 @@ syntax_base_color #ffffff
 syntax_keyword_color #5aa9e6
 syntax_type_color #f5d547
 syntax_operator_color #498467
-syntax_string_color #d52941
+syntax_string_color #49dd67
 syntax_comment_color #5c626e
