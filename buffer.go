@@ -155,6 +155,8 @@ func (buffer *Buffer) RemoveBefore() {
 	}
 
 	char := buffer.getPrevCharacter()
+	nextChar := buffer.getNextCharacter()
+
 	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.GapStart -= 1
 
@@ -164,6 +166,11 @@ func (buffer *Buffer) RemoveBefore() {
 		buffer.TotalLines -= 1
 	} else {
 		buffer.Cursor.Column -= 1
+
+		pair := getSymbolPair(char)
+		if pair != 0 && pair == nextChar {
+			buffer.RemoveAfter()
+		}
 	}
 
 	buffer.Dirty = true
