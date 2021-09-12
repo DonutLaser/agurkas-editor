@@ -3,14 +3,31 @@ package main
 import "github.com/veandco/go-sdl2/sdl"
 
 type BufferCursor struct {
-	Line        int32
-	Column      int32
-	LastColumn  int32
-	WidthNormal int32
-	WidthInsert int32
-	Height      int32
-	Advance     int32
-	Color       sdl.Color
+	Line       int32
+	Column     int32
+	LastColumn int32
+
+	WidthWide int32
+	WidthSlim int32
+	Height    int32
+
+	Advance int32
+
+	Color sdl.Color
+}
+
+func CreateBufferCursor(height int32, advance int32) (result BufferCursor) {
+	result.Line = 0
+	result.Column = 0
+	result.LastColumn = 0
+
+	result.WidthWide = 8
+	result.WidthSlim = 2
+	result.Height = height
+
+	result.Advance = advance
+
+	return
 }
 
 func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
@@ -22,9 +39,9 @@ func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidt
 	}
 	DrawRect(renderer, &lineHighlightRect, sdl.Color{R: 34, G: 35, B: 38, A: 255})
 
-	width := cursor.WidthNormal
+	width := cursor.WidthWide
 	if mode != Mode_Normal {
-		width = cursor.WidthInsert
+		width = cursor.WidthSlim
 	}
 
 	cursorRect := sdl.Rect{

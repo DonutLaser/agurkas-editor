@@ -20,44 +20,42 @@ type Buffer struct {
 	GapEnd     int
 	TotalLines int
 
-	Font        *Font
-	LineSpacing int32
+	Font *Font
 
 	Cursor       BufferCursor
 	Rect         sdl.Rect
 	ScrollY      int32
 	ScrollOffset int32
+	Dirty        bool
 
 	BookmarkLine  int32
 	LineFindQuery byte
 
 	Filepath        string
 	HighlighterFunc func(line []byte, theme *SyntaxTheme) []TokenInfo
-	Dirty           bool
 }
 
-func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) Buffer {
-	result := Buffer{
-		Data:        make([]byte, 16),
-		GapStart:    0,
-		GapEnd:      15,
-		TotalLines:  1,
-		Font:        font,
-		LineSpacing: (lineHeight - int32(font.Size)) / 2,
-		Cursor: BufferCursor{
-			WidthNormal: 8,
-			WidthInsert: 2,
-			Height:      lineHeight,
-			Advance:     int32(font.CharacterWidth),
-		},
-		Rect:         rect,
-		ScrollOffset: 8, // Lines
-		BookmarkLine: 0,
-		Filepath:     "",
-		Dirty:        false,
-	}
+func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) (result Buffer) {
+	result.Data = make([]byte, 16)
+	result.GapStart = 0
+	result.GapEnd = 15
+	result.TotalLines = 1
 
-	return result
+	result.Font = font
+
+	result.Cursor = CreateBufferCursor(lineHeight, int32(font.CharacterWidth))
+	result.Rect = rect
+	result.ScrollY = 0
+	result.ScrollOffset = 8 // Line count
+	result.Dirty = false
+
+	result.BookmarkLine = 0
+	result.LineFindQuery = 0
+
+	result.Filepath = ""
+	result.HighlighterFunc = nil
+
+	return
 }
 
 func (buffer *Buffer) SetData(data []byte, filepath string) {
@@ -347,7 +345,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 
 	text := buffer.GetText()
 	for index, line := range text {
-		y := int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY
+		y := int32(index)*buffer.Cursor.Height + (buffer.Cursor.Height-int32(buffer.Font.Size))/2 + buffer.ScrollY
 
 		if y > buffer.Rect.Y+buffer.Rect.H || y+int32(buffer.Font.Size) < buffer.Rect.Y {
 			continue
@@ -404,7 +402,7 @@ func (buffer *Buffer) renderLineNumber(renderer *sdl.Renderer, gutterRect *sdl.R
 	// @TODO (!important) rect could be reused between iterations to decrease garbage produced by the loop
 	lineNumberRect := sdl.Rect{
 		X: gutterRect.X + gutterRect.W - 10 - width - int32(lineNumberOffset),
-		Y: int32(index)*buffer.LineSpacing + int32(index)*int32(buffer.Font.Size) + int32(index+1)*buffer.LineSpacing + buffer.ScrollY,
+		Y: int32(index)*buffer.Cursor.Height + (buffer.Cursor.Height-int32(buffer.Font.Size))/2 + buffer.ScrollY,
 		W: width,
 		H: int32(buffer.Font.Size),
 	}
