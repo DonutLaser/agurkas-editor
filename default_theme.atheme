@@ -12,6 +12,7 @@ statusbar_dirty_color #d52941
 
 buffer_bg_color #141518
 buffer_line_highlight_color #222326
+buffer_selection_color #1d374c
 buffer_txt_color #ffffff
 buffer_cursor_color_match_mode true
 

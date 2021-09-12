@@ -395,7 +395,7 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 	text, selection := buffer.GetText()
 
 	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
-	buffer.renderSelection(renderer, gutterRect.W+5, selection)
+	buffer.renderSelection(renderer, gutterRect.W+5, selection, theme.Buffer.SelectionColor)
 
 	for index, line := range text {
 		y := int32(index)*buffer.Cursor.Height + (buffer.Cursor.Height-int32(buffer.Font.Size))/2 + buffer.ScrollY
@@ -485,7 +485,7 @@ func (buffer *Buffer) renderLine(renderer *sdl.Renderer, line string, leftStart 
 	}
 }
 
-func (buffer *Buffer) renderSelection(renderer *sdl.Renderer, left int32, selection []Selection) {
+func (buffer *Buffer) renderSelection(renderer *sdl.Renderer, left int32, selection []Selection, color sdl.Color) {
 	for _, sel := range selection {
 		rect := sdl.Rect{
 			X: left + sel.Start*int32(buffer.Font.CharacterWidth),
@@ -493,7 +493,7 @@ func (buffer *Buffer) renderSelection(renderer *sdl.Renderer, left int32, select
 			W: (sel.End - sel.Start) * int32(buffer.Font.CharacterWidth),
 			H: buffer.Cursor.Height,
 		}
-		DrawRect(renderer, &rect, sdl.Color{R: 255, G: 255, B: 0, A: 255})
+		DrawRect(renderer, &rect, color)
 	}
 }
 

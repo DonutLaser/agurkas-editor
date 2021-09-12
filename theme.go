@@ -26,6 +26,7 @@ type StatusBarTheme struct {
 type BufferTheme struct {
 	BackgroundColor    sdl.Color
 	LineHighlightColor sdl.Color
+	SelectionColor     sdl.Color
 	TextColor          sdl.Color
 
 	CursorColor               sdl.Color
@@ -183,6 +184,8 @@ func parseBuffer(key string, value string, theme *BufferTheme) {
 		theme.BackgroundColor = hexStringToColor(value)
 	case "buffer_line_highlight_color":
 		theme.LineHighlightColor = hexStringToColor(value)
+	case "buffer_selection_color":
+		theme.SelectionColor = hexStringToColor(value)
 	case "buffer_txt_color":
 		theme.TextColor = hexStringToColor(value)
 	case "buffer_cursor_color_match_mode":
