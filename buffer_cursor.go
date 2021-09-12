@@ -40,7 +40,7 @@ func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidt
 	DrawRect(renderer, &lineHighlightRect, sdl.Color{R: 34, G: 35, B: 38, A: 255})
 
 	width := cursor.WidthWide
-	if mode != Mode_Normal {
+	if mode == Mode_Insert {
 		width = cursor.WidthSlim
 	}
 

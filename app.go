@@ -13,7 +13,6 @@ package main
 // @TODO (!important) auto formatting
 
 // @NEXT ctrl + backspace in insert mode
-// @NEXT think about how to make a more scalable and maintainable version of gap buffer
 // @NEXT notifications
 
 import (
@@ -144,6 +143,8 @@ func (app *App) Tick(input Input) {
 	}
 
 	switch app.Mode {
+	case Mode_Visual:
+		fallthrough
 	case Mode_Normal:
 		app.handleInputNormal(input)
 	case Mode_Insert:
@@ -214,6 +215,7 @@ func (app *App) handleInputNormal(input Input) {
 
 	if input.Escape {
 		app.AmountModifier.Reset()
+		app.startNormalMode()
 		return
 	}
 
@@ -250,23 +252,35 @@ func (app *App) handleInputNormal(input Input) {
 	case 'L':
 		app.Buffer.MoveDownByLines(32)
 	case 'i':
-		app.startInsertMode()
+		if app.Mode == Mode_Normal {
+			app.startInsertMode()
+		}
 	case 'I':
-		// @TODO (!important) move to the first non white space character in the line
-		app.startInsertMode()
-		app.Buffer.MoveToStartOfLine()
+		if app.Mode == Mode_Normal {
+			// @TODO (!important) move to the first non white space character in the line
+			app.startInsertMode()
+			app.Buffer.MoveToStartOfLine()
+		}
 	case 'a':
-		app.startInsertMode()
-		app.Buffer.MoveRight()
+		if app.Mode == Mode_Normal {
+			app.startInsertMode()
+			app.Buffer.MoveRight()
+		}
 	case 'A':
-		app.startInsertMode()
-		app.Buffer.MoveToEndOfLine()
+		if app.Mode == Mode_Normal {
+			app.startInsertMode()
+			app.Buffer.MoveToEndOfLine()
+		}
 	case 'o':
-		app.startInsertMode()
-		app.Buffer.InsertNewLineBelow()
+		if app.Mode == Mode_Normal {
+			app.startInsertMode()
+			app.Buffer.InsertNewLineBelow()
+		}
 	case 'O':
-		app.startInsertMode()
-		app.Buffer.InsertNewLineAbove()
+		if app.Mode == Mode_Normal {
+			app.startInsertMode()
+			app.Buffer.InsertNewLineAbove()
+		}
 	case 'x':
 		app.Buffer.RemoveAfter()
 	case 'D':
@@ -294,7 +308,9 @@ func (app *App) handleInputNormal(input Input) {
 			app.Buffer.MoveToBufferEnd()
 		}
 	case 'J':
-		app.Buffer.MergeLineBelow()
+		if app.Mode == Mode_Normal {
+			app.Buffer.MergeLineBelow()
+		}
 	case 'r':
 		app.Submode = Submode_Replace
 	case 'd':
@@ -305,18 +321,34 @@ func (app *App) handleInputNormal(input Input) {
 		app.startInsertMode()
 		app.Buffer.ChangeRemainingLine()
 	case 'm':
-		app.Buffer.MarkCurrentPosition()
+		if app.Mode == Mode_Normal {
+			app.Buffer.MarkCurrentPosition()
+		}
 	case '`':
-		app.Buffer.MoveToBookmark()
+		if app.Mode == Mode_Normal {
+			app.Buffer.MoveToBookmark()
+		}
 	case 'f':
-		app.Submode = Submode_FindNext
+		if app.Mode == Mode_Normal {
+			app.Submode = Submode_FindNext
+		}
 	case 'F':
-		// @TODO (!important) perhaps this is not very useful
-		app.Submode = Submode_FindPrev
+		if app.Mode == Mode_Normal {
+			// @TODO (!important) perhaps this is not very useful
+			app.Submode = Submode_FindPrev
+		}
 	case ';':
-		app.Buffer.MoveToNextLineQuerySymbol()
+		if app.Mode == Mode_Normal {
+			app.Buffer.MoveToNextLineQuerySymbol()
+		}
 	case ',':
-		app.Buffer.MoveToPrevLineQuerySymbol()
+		if app.Mode == Mode_Normal {
+			app.Buffer.MoveToPrevLineQuerySymbol()
+		}
+	case 'v':
+		if app.Mode == Mode_Normal {
+			app.startVisualMode()
+		}
 	}
 }
 
@@ -505,7 +537,8 @@ func (app *App) openProjectSearch() {
 }
 
 func (app *App) saveSourceFile() {
-	filepath, success := SaveFile(app.Buffer.Filepath, app.Buffer.GetText())
+	text, _ := app.Buffer.GetText()
+	filepath, success := SaveFile(app.Buffer.Filepath, text)
 	if success {
 		app.Buffer.Filepath = filepath
 		app.Buffer.Dirty = false
@@ -540,4 +573,17 @@ func (app *App) startNormalMode() {
 	} else {
 		app.Buffer.Cursor.Color = app.Theme.Buffer.CursorColor
 	}
+
+	app.Buffer.StopSelection()
+}
+
+func (app *App) startVisualMode() {
+	app.Mode = Mode_Visual
+	if app.Theme.Buffer.CursorColorMatchModeColor {
+		app.Buffer.Cursor.Color = app.Theme.StatusBar.VisualColor
+	} else {
+		app.Buffer.Cursor.Color = app.Theme.Buffer.CursorColor
+	}
+
+	app.Buffer.StartSelection()
 }

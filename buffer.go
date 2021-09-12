@@ -14,11 +14,24 @@ const (
 	Direction_Down
 )
 
+type Selection struct {
+	Line  int32
+	Start int32
+	End   int32
+}
+
+type SelectionPoint struct {
+	Column int32
+	Line   int32
+	Offset int32
+}
+
 type Buffer struct {
-	Data       []byte
-	GapStart   int
-	GapEnd     int
-	TotalLines int
+	Data                []byte
+	GapStart            int
+	GapEnd              int
+	SelectionStartPoint SelectionPoint
+	TotalLines          int
 
 	Font *Font
 
@@ -39,6 +52,7 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) (result Buffer) {
 	result.Data = make([]byte, 16)
 	result.GapStart = 0
 	result.GapEnd = 15
+	result.SelectionStartPoint = SelectionPoint{Column: -1, Line: -1, Offset: 0}
 	result.TotalLines = 1
 
 	result.Font = font
@@ -58,6 +72,10 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) (result Buffer) {
 	return
 }
 
+// =============================================================
+// PUBLIC
+// =============================================================
+
 func (buffer *Buffer) SetData(data []byte, filepath string) {
 	cleaned := cleanText(data)
 
@@ -75,7 +93,8 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 		buffer.Data[i] = cleaned[i-16]
 	}
 
-	buffer.TotalLines = len(buffer.GetText())
+	text, _ := buffer.GetText()
+	buffer.TotalLines = len(text)
 
 	buffer.HighlighterFunc = nil
 	if strings.HasSuffix(buffer.Filepath, ".go") {
@@ -85,9 +104,21 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 	}
 }
 
+func (buffer *Buffer) StartSelection() {
+	buffer.SelectionStartPoint.Column = buffer.Cursor.Column
+	buffer.SelectionStartPoint.Line = buffer.Cursor.Line
+	buffer.SelectionStartPoint.Offset = int32(buffer.GapStart)
+}
+
+func (buffer *Buffer) StopSelection() {
+	buffer.SelectionStartPoint.Column = -1
+	buffer.SelectionStartPoint.Line = -1
+	buffer.SelectionStartPoint.Offset = 0
+}
+
 func (buffer *Buffer) Insert(char byte) {
-	prevChar := buffer.getPrevCharacter()
-	nextChar := buffer.getNextCharacter()
+	prevChar := buffer.prevCharacter()
+	nextChar := buffer.nextCharacter()
 
 	if char == '\t' {
 		// @TODO (!important) write tests for this
@@ -152,15 +183,15 @@ func (buffer *Buffer) RemoveBefore() {
 		return
 	}
 
-	char := buffer.getPrevCharacter()
-	nextChar := buffer.getNextCharacter()
+	char := buffer.prevCharacter()
+	nextChar := buffer.nextCharacter()
 
 	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.GapStart -= 1
 
 	if char == '\n' {
 		buffer.Cursor.Line -= 1
-		buffer.Cursor.Column = buffer.getCurrentLineSize()
+		buffer.Cursor.Column = buffer.currentLineSize()
 		buffer.TotalLines -= 1
 	} else {
 		buffer.Cursor.Column -= 1
@@ -179,7 +210,7 @@ func (buffer *Buffer) RemoveAfter() {
 		return
 	}
 
-	if buffer.getNextCharacter() == '\n' {
+	if buffer.nextCharacter() == '\n' {
 		buffer.TotalLines -= 1
 	}
 
@@ -191,7 +222,7 @@ func (buffer *Buffer) RemoveAfter() {
 
 // @TODO (!important) write tests for this
 func (buffer *Buffer) RemoveCurrentLine() {
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.nextCharacter() != '\n' {
 		buffer.RemoveAfter()
 	}
 	buffer.RemoveAfter() // Remove new line
@@ -209,7 +240,7 @@ func (buffer *Buffer) RemoveCurrentLine() {
 }
 
 func (buffer *Buffer) ChangeCurrentLine() {
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.nextCharacter() != '\n' {
 		buffer.RemoveAfter()
 	}
 
@@ -221,7 +252,7 @@ func (buffer *Buffer) ChangeCurrentLine() {
 }
 
 func (buffer *Buffer) MoveLeft() {
-	if buffer.GapStart == 0 || buffer.getPrevCharacter() == '\n' {
+	if buffer.GapStart == 0 || buffer.prevCharacter() == '\n' {
 		return
 	}
 
@@ -229,7 +260,7 @@ func (buffer *Buffer) MoveLeft() {
 }
 
 func (buffer *Buffer) MoveRight() {
-	if buffer.GapEnd == len(buffer.Data)-1 || buffer.getNextCharacter() == '\n' {
+	if buffer.GapEnd == len(buffer.Data)-1 || buffer.nextCharacter() == '\n' {
 		return
 	}
 
@@ -250,13 +281,13 @@ func (buffer *Buffer) MoveUp() {
 	if buffer.Cursor.Line > 0 {
 		buffer.moveLeftInternal() // Move over new line symbol
 		// @TODO (!important) this is probably not needed, get rid of this
-		char := buffer.getPrevCharacter()
+		char := buffer.prevCharacter()
 		if char != 0 && char != '\n' {
 			buffer.moveLeftInternal() // Move into the previous line to get its size correctly, unless the line is empty
 		}
 
 		// @TODO (!important) do something better here
-		buffer.Cursor.Column = int32(Max(int(buffer.getCurrentLineSize()-1), 0))
+		buffer.Cursor.Column = int32(Max(int(buffer.currentLineSize()-1), 0))
 		buffer.Cursor.Line -= 1
 
 		for buffer.Cursor.Column > endColumn {
@@ -275,7 +306,7 @@ func (buffer *Buffer) MoveDown() {
 	}
 
 	endColumn := Max(int(buffer.Cursor.Column), int(buffer.Cursor.LastColumn))
-	lineSize := buffer.getCurrentLineSize() // @TODO (!important) this might not be needed, we can just check if the next symbol will be newline
+	lineSize := buffer.currentLineSize() // @TODO (!important) this might not be needed, we can just check if the next symbol will be newline
 
 	for buffer.Cursor.Column < lineSize {
 		buffer.moveRightInternal()
@@ -317,7 +348,7 @@ func (buffer *Buffer) MarkCurrentPosition() {
 	buffer.BookmarkLine = buffer.Cursor.Line
 }
 
-func (buffer *Buffer) GetText() []string {
+func (buffer *Buffer) GetText() (lines []string, selection []Selection) {
 	// @TODO (!important) it is possible to cache the text lines if the text did not change between frames
 	var sb strings.Builder
 
@@ -329,7 +360,27 @@ func (buffer *Buffer) GetText() []string {
 		sb.WriteByte(buffer.Data[i])
 	}
 
-	return strings.Split(sb.String(), "\n")
+	lines = strings.Split(sb.String(), "\n")
+
+	if buffer.SelectionStartPoint.Column > -1 {
+		if buffer.Cursor.Line > buffer.SelectionStartPoint.Line {
+			selection = append(selection, Selection{Line: buffer.SelectionStartPoint.Line, Start: buffer.SelectionStartPoint.Column, End: int32(len(lines[buffer.SelectionStartPoint.Line]))})
+			for i := buffer.SelectionStartPoint.Line + 1; i < buffer.Cursor.Line; i += 1 {
+				selection = append(selection, Selection{Line: i, Start: 0, End: int32(len(lines[i]))})
+			}
+			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: 0, End: buffer.Cursor.Column})
+		} else if buffer.Cursor.Line == buffer.SelectionStartPoint.Line {
+			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.SelectionStartPoint.Column, End: buffer.Cursor.Column})
+		} else {
+			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.Cursor.Column, End: int32(len(lines[buffer.Cursor.Line]))})
+			for i := buffer.Cursor.Line + 1; i < buffer.SelectionStartPoint.Line; i += 1 {
+				selection = append(selection, Selection{Line: i, Start: 0, End: int32(len(lines[i]))})
+			}
+			selection = append(selection, Selection{Line: buffer.SelectionStartPoint.Line, Start: 0, End: buffer.SelectionStartPoint.Column + 1})
+		}
+	}
+
+	return
 }
 
 func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
@@ -341,9 +392,11 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 	}
 	DrawRect(renderer, &gutterRect, theme.Gutter.BackgroundColor)
 
-	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
+	text, selection := buffer.GetText()
 
-	text := buffer.GetText()
+	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
+	buffer.renderSelection(renderer, gutterRect.W+5, selection)
+
 	for index, line := range text {
 		y := int32(index)*buffer.Cursor.Height + (buffer.Cursor.Height-int32(buffer.Font.Size))/2 + buffer.ScrollY
 
@@ -374,6 +427,10 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 		}
 	}
 }
+
+// =============================================================
+// PRIVATE
+// =============================================================
 
 func (buffer *Buffer) renderLineNumber(renderer *sdl.Renderer, gutterRect *sdl.Rect, index int, theme *Theme) {
 	lineNumber := Abs(int(buffer.Cursor.Line) - index)
@@ -428,6 +485,18 @@ func (buffer *Buffer) renderLine(renderer *sdl.Renderer, line string, leftStart 
 	}
 }
 
+func (buffer *Buffer) renderSelection(renderer *sdl.Renderer, left int32, selection []Selection) {
+	for _, sel := range selection {
+		rect := sdl.Rect{
+			X: left + sel.Start*int32(buffer.Font.CharacterWidth),
+			Y: int32(sel.Line)*buffer.Cursor.Height + buffer.ScrollY,
+			W: (sel.End - sel.Start) * int32(buffer.Font.CharacterWidth),
+			H: buffer.Cursor.Height,
+		}
+		DrawRect(renderer, &rect, sdl.Color{R: 255, G: 255, B: 0, A: 255})
+	}
+}
+
 func (buffer *Buffer) expand() {
 	newSize := len(buffer.Data) * 2
 	newData := make([]byte, newSize)
@@ -447,7 +516,7 @@ func (buffer *Buffer) expand() {
 }
 
 func (buffer *Buffer) moveLeftInternal() {
-	char := buffer.getPrevCharacter()
+	char := buffer.prevCharacter()
 	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.Data[buffer.GapEnd] = char
 
@@ -459,7 +528,7 @@ func (buffer *Buffer) moveLeftInternal() {
 }
 
 func (buffer *Buffer) moveRightInternal() {
-	char := buffer.getNextCharacter()
+	char := buffer.nextCharacter()
 	buffer.Data[buffer.GapEnd+1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
 	buffer.Data[buffer.GapStart] = char
 
@@ -470,7 +539,7 @@ func (buffer *Buffer) moveRightInternal() {
 	buffer.Cursor.LastColumn = 0
 }
 
-func (buffer *Buffer) getCurrentLineSize() (result int32) {
+func (buffer *Buffer) currentLineSize() (result int32) {
 	preIndex := buffer.GapStart - 1
 	for preIndex >= 0 && buffer.Data[preIndex] != '\n' {
 		result += 1
@@ -507,7 +576,7 @@ func cleanText(data []byte) (result []byte) {
 	return
 }
 
-func (buffer *Buffer) getPrevCharacter() byte {
+func (buffer *Buffer) prevCharacter() byte {
 	if buffer.GapStart == 0 {
 		return 0
 	}
@@ -515,7 +584,7 @@ func (buffer *Buffer) getPrevCharacter() byte {
 	return buffer.Data[buffer.GapStart-1]
 }
 
-func (buffer *Buffer) getNextCharacter() byte {
+func (buffer *Buffer) nextCharacter() byte {
 	if buffer.GapEnd == len(buffer.Data)-1 {
 		return 0
 	}

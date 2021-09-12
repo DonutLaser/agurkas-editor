@@ -190,7 +190,7 @@ func parseBuffer(key string, value string, theme *BufferTheme) {
 	case "buffer_cursor_color":
 		theme.CursorColor = hexStringToColor(value)
 	default:
-		log.Printf("Unsupported property for status bar theme: %s = %s", key, value)
+		log.Printf("Unsupported property for buffer theme: %s = %s", key, value)
 	}
 }
 
@@ -207,7 +207,7 @@ func parseGutter(key string, value string, theme *GutterTheme) {
 	case "gutter_line_number_active_color":
 		theme.LineNumberActiveColor = hexStringToColor(value)
 	default:
-		log.Printf("Unsupported property for status bar theme: %s = %s", key, value)
+		log.Printf("Unsupported property for gutter theme: %s = %s", key, value)
 	}
 }
 
@@ -234,7 +234,7 @@ func parseFileSearch(key string, value string, theme *FileSearchTheme) {
 	case "fs_result_path_active_color":
 		theme.ResultPathActiveColor = hexStringToColor(value)
 	default:
-		log.Printf("Unsupported property for status bar theme: %s = %s", key, value)
+		log.Printf("Unsupported property for filesearch theme: %s = %s", key, value)
 	}
 }
 

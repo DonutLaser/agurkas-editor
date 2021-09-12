@@ -44,10 +44,10 @@ func (buffer *Buffer) RemoveLines(direction Direction, count int) {
 
 // @TODO (!important) write tests for this
 func (buffer *Buffer) RemoveRemainingLine() {
-	char := buffer.getNextCharacter()
+	char := buffer.nextCharacter()
 	for char != '\n' && buffer.GapEnd != len(buffer.Data)-1 {
 		buffer.RemoveAfter()
-		char = buffer.getNextCharacter()
+		char = buffer.nextCharacter()
 	}
 
 	buffer.Dirty = true
@@ -92,7 +92,7 @@ func (buffer *Buffer) MoveToStartOfLine() {
 
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveToEndOfLine() {
-	for buffer.GapEnd != len(buffer.Data)-1 && buffer.getNextCharacter() != '\n' {
+	for buffer.GapEnd != len(buffer.Data)-1 && buffer.nextCharacter() != '\n' {
 		buffer.MoveRight()
 	}
 }
@@ -114,11 +114,11 @@ func (buffer *Buffer) MoveToBufferEnd() {
 // @TODO (!important) write tests for this
 func (buffer *Buffer) MoveRightToWordStart(ignorePunctuation bool) {
 	if !ignorePunctuation {
-		for !isPunctuation(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+		for !isPunctuation(buffer.nextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
 			buffer.MoveRight()
 		}
 	} else {
-		for !isWhitespace(buffer.getNextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
+		for !isWhitespace(buffer.nextCharacter()) && buffer.GapEnd != len(buffer.Data)-1 {
 			buffer.MoveRight()
 		}
 	}
@@ -131,11 +131,11 @@ func (buffer *Buffer) MoveLeftToWordStart(ignorePunctuation bool) {
 	buffer.MoveLeft()
 
 	if !ignorePunctuation {
-		for !isPunctuation(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+		for !isPunctuation(buffer.prevCharacter()) && buffer.Cursor.Column > 0 {
 			buffer.MoveLeft()
 		}
 	} else {
-		for !isWhitespace(buffer.getPrevCharacter()) && buffer.Cursor.Column > 0 {
+		for !isWhitespace(buffer.prevCharacter()) && buffer.Cursor.Column > 0 {
 			buffer.MoveLeft()
 		}
 	}
@@ -171,19 +171,19 @@ func (buffer *Buffer) FindInLine(symbol byte, forwards bool) {
 func (buffer *Buffer) MoveToNextLineQuerySymbol() {
 	buffer.MoveRight() // Ignore the query symbol that we are currently standing on
 
-	nextChar := buffer.getNextCharacter()
+	nextChar := buffer.nextCharacter()
 	for nextChar != '\n' && nextChar != buffer.LineFindQuery && buffer.GapEnd != len(buffer.Data)-1 {
 		buffer.MoveRight()
-		nextChar = buffer.getNextCharacter()
+		nextChar = buffer.nextCharacter()
 	}
 }
 
 func (buffer *Buffer) MoveToPrevLineQuerySymbol() {
 	buffer.MoveLeft() // Ignore the query symbol that we are currently standing on
 
-	nextChar := buffer.getNextCharacter()
+	nextChar := buffer.nextCharacter()
 	for nextChar != buffer.LineFindQuery && buffer.Cursor.Column != 0 {
 		buffer.MoveLeft()
-		nextChar = buffer.getNextCharacter()
+		nextChar = buffer.nextCharacter()
 	}
 }
