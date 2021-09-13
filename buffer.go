@@ -370,7 +370,11 @@ func (buffer *Buffer) GetText() (lines []string, selection []Selection) {
 			}
 			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: 0, End: buffer.Cursor.Column})
 		} else if buffer.Cursor.Line == buffer.SelectionStartPoint.Line {
-			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.SelectionStartPoint.Column, End: buffer.Cursor.Column})
+			if buffer.SelectionStartPoint.Column < buffer.Cursor.Column {
+				selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.SelectionStartPoint.Column, End: buffer.Cursor.Column})
+			} else {
+				selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.Cursor.Column, End: buffer.SelectionStartPoint.Column + 1})
+			}
 		} else {
 			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.Cursor.Column, End: int32(len(lines[buffer.Cursor.Line]))})
 			for i := buffer.Cursor.Line + 1; i < buffer.SelectionStartPoint.Line; i += 1 {
@@ -394,8 +398,8 @@ func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 
 	text, selection := buffer.GetText()
 
-	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY)
 	buffer.renderSelection(renderer, gutterRect.W+5, selection, theme.Buffer.SelectionColor)
+	buffer.Cursor.Render(renderer, mode, gutterRect.W, buffer.Rect.W, buffer.ScrollY, len(selection) == 0)
 
 	for index, line := range text {
 		y := int32(index)*buffer.Cursor.Height + (buffer.Cursor.Height-int32(buffer.Font.Size))/2 + buffer.ScrollY

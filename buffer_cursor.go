@@ -30,14 +30,16 @@ func CreateBufferCursor(height int32, advance int32) (result BufferCursor) {
 	return
 }
 
-func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidth int32, windowWidth int32, scrollOffsetY int32) {
-	lineHighlightRect := sdl.Rect{
-		X: gutterWidth,
-		Y: cursor.Line*cursor.Height + scrollOffsetY,
-		W: windowWidth - gutterWidth,
-		H: cursor.Height,
+func (cursor *BufferCursor) Render(renderer *sdl.Renderer, mode Mode, gutterWidth int32, windowWidth int32, scrollOffsetY int32, renderHighlight bool) {
+	if renderHighlight {
+		lineHighlightRect := sdl.Rect{
+			X: gutterWidth,
+			Y: cursor.Line*cursor.Height + scrollOffsetY,
+			W: windowWidth - gutterWidth,
+			H: cursor.Height,
+		}
+		DrawRect(renderer, &lineHighlightRect, sdl.Color{R: 34, G: 35, B: 38, A: 255})
 	}
-	DrawRect(renderer, &lineHighlightRect, sdl.Color{R: 34, G: 35, B: 38, A: 255})
 
 	width := cursor.WidthWide
 	if mode == Mode_Insert {
