@@ -349,6 +349,13 @@ func (app *App) handleInputNormal(input Input) {
 		if app.Mode == Mode_Normal {
 			app.startVisualMode()
 		}
+	case 'y':
+		text := app.Buffer.GetSelectionText()
+		fmt.Println(text)
+		err := sdl.SetClipboardText(text)
+		checkError(err)
+
+		app.startNormalMode()
 	}
 }
 

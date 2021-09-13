@@ -363,28 +363,39 @@ func (buffer *Buffer) GetText() (lines []string, selection []Selection) {
 	lines = strings.Split(sb.String(), "\n")
 
 	if buffer.SelectionStartPoint.Column > -1 {
-		if buffer.Cursor.Line > buffer.SelectionStartPoint.Line {
-			selection = append(selection, Selection{Line: buffer.SelectionStartPoint.Line, Start: buffer.SelectionStartPoint.Column, End: int32(len(lines[buffer.SelectionStartPoint.Line]))})
-			for i := buffer.SelectionStartPoint.Line + 1; i < buffer.Cursor.Line; i += 1 {
+		start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, SelectionPoint{Column: buffer.Cursor.Column, Line: buffer.Cursor.Line})
+
+		if start.Line != end.Line {
+			selection = append(selection, Selection{Line: start.Line, Start: start.Column, End: int32(len(lines[start.Line]))})
+			for i := start.Line + 1; i < end.Line; i += 1 {
 				selection = append(selection, Selection{Line: i, Start: 0, End: int32(len(lines[i]))})
 			}
-			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: 0, End: buffer.Cursor.Column})
-		} else if buffer.Cursor.Line == buffer.SelectionStartPoint.Line {
-			if buffer.SelectionStartPoint.Column < buffer.Cursor.Column {
-				selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.SelectionStartPoint.Column, End: buffer.Cursor.Column})
-			} else {
-				selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.Cursor.Column, End: buffer.SelectionStartPoint.Column + 1})
-			}
+			selection = append(selection, Selection{Line: end.Line, Start: 0, End: end.Column})
 		} else {
-			selection = append(selection, Selection{Line: buffer.Cursor.Line, Start: buffer.Cursor.Column, End: int32(len(lines[buffer.Cursor.Line]))})
-			for i := buffer.Cursor.Line + 1; i < buffer.SelectionStartPoint.Line; i += 1 {
-				selection = append(selection, Selection{Line: i, Start: 0, End: int32(len(lines[i]))})
-			}
-			selection = append(selection, Selection{Line: buffer.SelectionStartPoint.Line, Start: 0, End: buffer.SelectionStartPoint.Column + 1})
+			selection = append(selection, Selection{Line: start.Line, Start: start.Column, End: end.Column})
 		}
 	}
 
 	return
+}
+
+func (buffer *Buffer) GetSelectionText() string {
+	nextChar := buffer.nextCharacter()
+	if buffer.SelectionStartPoint.Column == -1 {
+		return string(nextChar)
+	}
+
+	var sb strings.Builder
+
+	if buffer.Cursor.Line > buffer.SelectionStartPoint.Line || (buffer.Cursor.Line == buffer.SelectionStartPoint.Line && buffer.Cursor.Column > buffer.SelectionStartPoint.Column) {
+		sb.WriteString(string(buffer.Data[buffer.SelectionStartPoint.Offset:buffer.GapStart]))
+	} else {
+		sb.WriteString(string(buffer.Data[buffer.GapEnd:buffer.SelectionStartPoint.Offset]))
+	}
+
+	sb.WriteByte(nextChar)
+
+	return sb.String()
 }
 
 func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
@@ -610,4 +621,12 @@ func (buffer *Buffer) maybeScrollUp() {
 	if diff < 0 {
 		buffer.ScrollY = int32(Min(int(buffer.ScrollY-diff), 0))
 	}
+}
+
+func (buffer *Buffer) sortSelectionEnds(point1 SelectionPoint, point2 SelectionPoint) (start SelectionPoint, end SelectionPoint) {
+	if point1.Line > point2.Line || (point1.Line == point2.Line && point1.Column > point2.Column) {
+		return point2, point1
+	}
+
+	return point1, point2
 }
