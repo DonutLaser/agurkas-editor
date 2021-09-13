@@ -398,6 +398,24 @@ func (buffer *Buffer) GetSelectionText() string {
 	return sb.String()
 }
 
+func (buffer *Buffer) GetCurrentLineText() string {
+	start := buffer.GapStart - 1
+	for start >= 0 && buffer.Data[start] != '\n' {
+		start -= 1
+	}
+
+	end := buffer.GapEnd + 1
+	for end != len(buffer.Data) && buffer.Data[end] != '\n' {
+		end += 1
+	}
+
+	var sb strings.Builder
+	sb.WriteString(string(buffer.Data[start+1 : buffer.GapStart]))
+	sb.WriteString(string(buffer.Data[buffer.GapEnd+1 : end]))
+
+	return sb.String()
+}
+
 func (buffer *Buffer) Render(renderer *sdl.Renderer, mode Mode, theme *Theme) {
 	gutterRect := sdl.Rect{
 		X: 0,

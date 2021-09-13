@@ -187,6 +187,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) ci and vi and di
 	// @TODO (!important) daw
 	// @TODO (!important) vaf
+	// @TODO (!important) < and >
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
@@ -351,7 +352,12 @@ func (app *App) handleInputNormal(input Input) {
 		}
 	case 'y':
 		text := app.Buffer.GetSelectionText()
-		fmt.Println(text)
+		err := sdl.SetClipboardText(text)
+		checkError(err)
+
+		app.startNormalMode()
+	case 'Y':
+		text := app.Buffer.GetCurrentLineText()
 		err := sdl.SetClipboardText(text)
 		checkError(err)
 
