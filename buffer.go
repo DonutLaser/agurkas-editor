@@ -251,6 +251,20 @@ func (buffer *Buffer) ChangeCurrentLine() {
 	buffer.Dirty = true
 }
 
+func (buffer *Buffer) Indent() {
+	buffer.MoveToStartOfLine()
+	for i := 0; i < 4; i += 1 {
+		buffer.Insert(' ')
+	}
+}
+
+func (buffer *Buffer) Outdent() {
+	buffer.MoveToStartOfLine()
+	for i := 0; i < 4; i += 1 {
+		buffer.RemoveAfter()
+	}
+}
+
 func (buffer *Buffer) MoveLeft() {
 	if buffer.GapStart == 0 || buffer.prevCharacter() == '\n' {
 		return

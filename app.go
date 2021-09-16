@@ -346,6 +346,10 @@ func (app *App) handleInputNormal(input Input) {
 		if app.Mode == Mode_Normal {
 			app.Buffer.MoveToPrevLineQuerySymbol()
 		}
+	case '>':
+		app.Buffer.Indent()
+	case '<':
+		app.Buffer.Outdent()
 	case 'v':
 		if app.Mode == Mode_Normal {
 			app.startVisualMode()
