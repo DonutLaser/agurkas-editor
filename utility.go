@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -19,6 +20,21 @@ func expandRect(rect sdl.Rect, amount int32) sdl.Rect {
 		W: rect.W + amount*2,
 		H: rect.H + amount*2,
 	}
+}
+
+func cleanString(text string) string {
+	var sb strings.Builder
+	for _, symbol := range text {
+		if isAlpha(byte(symbol)) {
+			sb.WriteByte(byte(symbol))
+		}
+	}
+
+	return strings.ToLower(sb.String())
+}
+
+func isAlpha(char byte) bool {
+	return char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z'
 }
 
 func isAlphaNumeric(char byte) bool {

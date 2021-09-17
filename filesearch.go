@@ -9,6 +9,9 @@ import (
 type FileSearchEntry struct {
 	Name     string
 	FullPath string
+
+	NameClean     string
+	FullPathClean string
 }
 
 type FileSearch struct {
@@ -61,6 +64,10 @@ func (fs *FileSearch) Open(availableFiles []FileSearchEntry, onClose func(string
 	fs.SearchQuery.Reset()
 
 	fs.FileEntries = availableFiles
+	for i := 0; i < len(fs.FileEntries); i += 1 {
+		fs.FileEntries[i].NameClean = cleanString(fs.FileEntries[i].Name)
+		fs.FileEntries[i].FullPathClean = cleanString(fs.FileEntries[i].FullPath)
+	}
 
 	size := Min(len(fs.FileEntries), 5)
 	fs.FoundEntries = make([]int, size)
@@ -89,7 +96,7 @@ func (fs *FileSearch) updateSearchResults() {
 
 	query := fs.SearchQuery.String()
 	for index, entry := range fs.FileEntries {
-		if strings.Contains(entry.Name, query) || strings.Contains(entry.FullPath, query) {
+		if strings.Contains(entry.NameClean, strings.ToLower(query)) || strings.Contains(entry.FullPathClean, strings.ToLower(query)) {
 			fs.FoundEntries = append(fs.FoundEntries, index)
 		}
 	}
