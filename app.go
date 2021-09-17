@@ -58,16 +58,19 @@ type App struct {
 	Theme      Theme
 	LineHeight int32
 
-	StatusBar  StatusBar
-	Buffer     Buffer
-	FileSearch FileSearch
+	StatusBar      StatusBar
+	Buffer         Buffer
+	FileSearch     FileSearch
+	CommandPalette CommandPalette
+	Commands       map[string]func(app *App)
 
-	Mode           Mode
-	Submode        Submode
-	AmountModifier strings.Builder
-	Project        Project
-	Cache          Cache
-	FileSearchOpen bool
+	Mode               Mode
+	Submode            Submode
+	AmountModifier     strings.Builder
+	Project            Project
+	Cache              Cache
+	FileSearchOpen     bool
+	CommandPaletteOpen bool
 }
 
 // ==============================================================
@@ -87,6 +90,9 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
 	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14, &result.RegularFont12)
+	result.CommandPalette = CreateCommandPalette(result.LineHeight, &result.RegularFont14)
+	result.Commands = map[string]func(app *App){}
+
 	cacheDir, _ := os.UserCacheDir()
 	result.Cache = ParseCache(fmt.Sprintf("%s/agurkas", cacheDir))
 
@@ -115,6 +121,11 @@ func (app *App) Tick(input Input) {
 		return
 	}
 
+	if app.CommandPaletteOpen {
+		app.CommandPalette.Tick(input)
+		return
+	}
+
 	if input.Ctrl {
 		if input.Alt {
 			// Save workspace
@@ -124,6 +135,7 @@ func (app *App) Tick(input Input) {
 				app.openProject("")
 			} else if input.TypedCharacter == 'p' {
 				app.openProjectSearch()
+				app.CommandPaletteOpen = false
 			}
 
 			return
@@ -131,6 +143,7 @@ func (app *App) Tick(input Input) {
 
 		if input.TypedCharacter == 'p' && !app.FileSearchOpen {
 			app.openFileSearch()
+			app.CommandPaletteOpen = false
 		} else if input.TypedCharacter == 's' && app.Buffer.Dirty {
 			app.saveSourceFile()
 		} else if input.TypedCharacter == 'o' {
@@ -139,6 +152,11 @@ func (app *App) Tick(input Input) {
 			app.showFileInExplorer()
 		}
 
+		return
+	}
+
+	if input.TypedCharacter == ':' && !app.CommandPaletteOpen {
+		app.openCommandPalette()
 		return
 	}
 
@@ -167,6 +185,8 @@ func (app *App) Render(renderer *sdl.Renderer) {
 
 	if app.FileSearchOpen {
 		app.FileSearch.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
+	} else if app.CommandPaletteOpen {
+		app.CommandPalette.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
 	}
 
 	renderer.Present()
@@ -186,7 +206,7 @@ func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) ck and cj (change)
 	// @TODO (!important) ci and vi and di
 	// @TODO (!important) daw
-	// @TODO (!important) vaf
+	// @TODO (!important) vaf and vaw
 	// @TODO (!important) < and >
 
 	if app.Submode == Submode_Replace {
@@ -538,6 +558,21 @@ func (app *App) openFileSearch() {
 		}
 
 		app.openSourceFile(path)
+	})
+}
+
+func (app *App) openCommandPalette() {
+	app.CommandPaletteOpen = true
+	app.CommandPalette.Open(func(command string) {
+		app.CommandPaletteOpen = false
+		if command == "" {
+			return
+		}
+
+		com := app.Commands[command]
+		if com != nil {
+			com(app)
+		}
 	})
 }
 

@@ -46,9 +46,7 @@ func PathsToFileSearchEntries(paths []string) (result []FileSearchEntry) {
 }
 
 func CreateFileSearch(lineHeight int32, font14 *Font, font12 *Font) (result FileSearch) {
-	result.Cursor.Width = 2
-	result.Cursor.Height = lineHeight
-	result.Cursor.Advance = int32(font14.CharacterWidth)
+	result.Cursor = CreateInputCursor(lineHeight, int32(font14.CharacterWidth))
 	result.Width = 500
 	result.LineHeight = lineHeight
 	result.LineSpacing = (lineHeight - int32(font14.Size)) / 2
