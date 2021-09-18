@@ -6,7 +6,7 @@ package main
 // @TODO (!important) task
 // @TODO (!important) intellisense
 // @TODO (!important) surround with
-// @TODO (!important) search file/project
+// @TODO (!important) search project
 // @TODO (!important) search and replace file/project
 // @TODO (!important) builtin todos
 // @TODO (!important) language switching
@@ -211,16 +211,14 @@ func (app *App) Render(renderer *sdl.Renderer) {
 
 func (app *App) handleInputNormal(input Input) {
 	// @TODO (!important) e and E (move end word)
-	// @TODO (!important) y (yank)
 	// @TODO (!important) u (undo)
 	// @TODO (!important) p and P (paste)
-	// @TODO (!important) v and V (visual mode and visual line mode)
+	// @TODO (!important) V (visual mode and visual line mode)
 	// @TODO (!important) gd and ga and gv and gh (goto)
 	// @TODO (!important) ck and cj (change)
 	// @TODO (!important) ci and vi and di
 	// @TODO (!important) daw
 	// @TODO (!important) vaf and vaw
-	// @TODO (!important) < and >
 
 	if app.Submode == Submode_Replace {
 		app.handleInputSubmodeReplace(input)
