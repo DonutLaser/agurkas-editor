@@ -7,6 +7,7 @@ type Input struct {
 	Ctrl           bool
 	Alt            bool
 	Shift          bool
+	CapsLock       bool // Used only to know when to visually show that caps lock is on, you already get uppercase typed character if caps lock is on
 }
 
 func (input *Input) Clear() {

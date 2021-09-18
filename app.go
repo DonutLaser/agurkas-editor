@@ -73,6 +73,7 @@ type App struct {
 	FileSearchOpen     bool
 	CommandPaletteOpen bool
 	SearchOpen         bool
+	CapsOn             bool
 }
 
 // ==============================================================
@@ -119,6 +120,8 @@ func (app *App) Resized(windowWidth int32, windowHeight int32) {
 }
 
 func (app *App) Tick(input Input) {
+	app.CapsOn = input.CapsLock
+
 	if app.FileSearchOpen {
 		app.FileSearch.Tick(input)
 		return
@@ -185,6 +188,9 @@ func (app *App) Render(renderer *sdl.Renderer) {
 	app.StatusBar.RenderSubmode(renderer, app.Submode, &app.RegularFont14, &app.Theme.StatusBar)
 	app.StatusBar.RenderProject(renderer, app.Project.Name, GetFileNameFromPath(app.Buffer.Filepath), app.Buffer.Dirty, &app.RegularFont14, &app.Theme.StatusBar)
 	app.StatusBar.RenderLineCount(renderer, fmt.Sprintf("Lines: %d", app.Buffer.TotalLines), &app.RegularFont14, &app.Theme.StatusBar)
+	if app.CapsOn {
+		app.StatusBar.RenderCaps(renderer, "CAPS ON", &app.RegularFont14, &app.Theme.StatusBar)
+	}
 
 	if app.FileSearchOpen {
 		app.FileSearch.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)

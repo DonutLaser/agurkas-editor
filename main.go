@@ -16,7 +16,7 @@ func getCharacter(shift bool, lowercase byte, uppercase byte) byte {
 }
 
 func keyToCharacter(key sdl.Keycode, mod uint16) byte {
-	shift := ((mod & sdl.KMOD_LSHIFT) | (mod & sdl.KMOD_RSHIFT)) != 0
+	shift := ((mod & sdl.KMOD_LSHIFT) | (mod & sdl.KMOD_RSHIFT) | mod&sdl.KMOD_CAPS) != 0
 
 	switch key {
 	case sdl.K_q:
@@ -178,6 +178,10 @@ func main() {
 				case sdl.K_ESCAPE:
 					if t.State != sdl.RELEASED {
 						input.Escape = true
+					}
+				case sdl.K_CAPSLOCK:
+					if t.Type == sdl.KEYDOWN && t.Repeat == 0 {
+						input.CapsLock = !input.CapsLock
 					}
 				default:
 					if t.State != sdl.RELEASED {

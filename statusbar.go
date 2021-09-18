@@ -101,7 +101,18 @@ func (bar *StatusBar) RenderLineCount(renderer *sdl.Renderer, text string, font 
 	rect.Y += (rect.H - int32(font.Size)) / 2
 	rect.W = width
 	rect.H = int32(font.Size)
+
 	DrawText(renderer, font, text, &rect, theme.TextColor)
+}
+
+func (bar *StatusBar) RenderCaps(renderer *sdl.Renderer, text string, font *Font, theme *StatusBarTheme) {
+	width := font.GetStringWidth(text)
+	rect := bar.getRectRight(width + 8)
+	rect.Y += (rect.H - int32(font.Size)) / 2
+	rect.W = width
+	rect.H = int32(font.Size)
+
+	DrawText(renderer, font, text, &rect, theme.DirtyColor)
 }
 
 func (bar *StatusBar) getRectLeft(width int32) (result sdl.Rect) {
