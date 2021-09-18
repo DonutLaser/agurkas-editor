@@ -57,6 +57,7 @@ type App struct {
 	WindowRect sdl.Rect
 	Theme      Theme
 	LineHeight int32
+	Icon       *sdl.Surface
 
 	StatusBar      StatusBar
 	Buffer         Buffer
@@ -89,6 +90,7 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.WindowRect = sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight}
 	result.Theme = ParseTheme("./default_theme.atheme")
 	result.LineHeight = 18
+	result.Icon = LoadIcon("./assets/images/icon.png")
 
 	result.StatusBar = CreateStatusBar(renderer, &result.WindowRect)
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})

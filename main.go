@@ -147,6 +147,8 @@ func main() {
 	app := Init(renderer, windowWidth, windowHeight)
 	input := Input{}
 
+	window.SetIcon(app.Icon)
+
 	running := true
 	for running {
 		input.Clear()

@@ -29,6 +29,13 @@ func LoadImage(path string, renderer *sdl.Renderer) (result Image) {
 	return
 }
 
+func LoadIcon(path string) *sdl.Surface {
+	image, err := img.Load(path)
+	checkError(err)
+
+	return image
+}
+
 func (image *Image) Render(renderer *sdl.Renderer, position sdl.Point, color sdl.Color) {
 	rect := sdl.Rect{
 		X: position.X,
