@@ -82,17 +82,31 @@ func (search *Search) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, theme
 		H: search.LineHeight + 10,
 	}
 
+	findWidth := search.Font.GetStringWidth("Find:")
+	findRect := sdl.Rect{
+		X: inputRect.X + 10,
+		Y: inputRect.Y + (inputRect.H-int32(search.Font.Size))/2,
+		W: findWidth,
+		H: int32(search.Font.Size),
+	}
+
 	borderRect := expandRect(inputRect, 1)
 
 	DrawRect(renderer, &borderRect, theme.BorderColor)
 	DrawRect(renderer, &inputRect, theme.InputBackgroundColor)
-	search.Cursor.Render(renderer, inputRect, theme.CursorColor)
+	DrawText(renderer, search.Font, "Find:", &findRect, theme.ResultNameActiveColor)
+	search.Cursor.Render(renderer, sdl.Rect{
+		X: inputRect.X + 15 + findRect.W,
+		Y: inputRect.Y,
+		W: inputRect.W - findRect.W - 20,
+		H: inputRect.H,
+	}, theme.CursorColor)
 
 	query := search.Input.String()
 	if len(query) > 0 {
 		width := search.Font.GetStringWidth(query)
 		queryRect := sdl.Rect{
-			X: inputRect.X + 5,
+			X: inputRect.X + 20 + findRect.W,
 			Y: inputRect.Y + (inputRect.H-int32(search.Font.Size))/2,
 			W: width,
 			H: int32(search.Font.Size),

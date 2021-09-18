@@ -5,6 +5,8 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 )
 
+// @TODO (!important) support caps lock
+
 func getCharacter(shift bool, lowercase byte, uppercase byte) byte {
 	if shift {
 		return uppercase
