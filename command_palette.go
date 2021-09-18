@@ -80,7 +80,7 @@ func (cp *CommandPalette) Tick(input Input) {
 func (cp *CommandPalette) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, theme *FileSearchTheme) {
 	inputRect := sdl.Rect{
 		X: parentRect.W/2 - cp.Width/2,
-		Y: parentRect.Y + int32(float32(parentRect.H)*0.85),
+		Y: parentRect.Y + int32(float32(parentRect.H)*0.15),
 		W: cp.Width,
 		H: cp.LineHeight + 10,
 	}
@@ -92,14 +92,18 @@ func (cp *CommandPalette) Render(renderer *sdl.Renderer, parentRect *sdl.Rect, t
 	cp.Cursor.Render(renderer, inputRect, theme.CursorColor)
 
 	command := cp.Input.String()
-	if len(command) > 0 {
-		width := cp.Font.GetStringWidth(command)
-		commandRect := sdl.Rect{
-			X: inputRect.X + 5,
-			Y: inputRect.Y + (inputRect.H-int32(cp.Font.Size))/2,
-			W: width,
-			H: int32(cp.Font.Size),
-		}
-		DrawText(renderer, cp.Font, command, &commandRect, theme.InputTextColor)
+	color := theme.InputTextColor
+	if len(command) == 0 {
+		command = "Command"
+		color = theme.ResultPathColor
 	}
+
+	width := cp.Font.GetStringWidth(command)
+	commandRect := sdl.Rect{
+		X: inputRect.X + 5,
+		Y: inputRect.Y + (inputRect.H-int32(cp.Font.Size))/2,
+		W: width,
+		H: int32(cp.Font.Size),
+	}
+	DrawText(renderer, cp.Font, command, &commandRect, color)
 }

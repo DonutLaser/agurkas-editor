@@ -76,6 +76,34 @@ func isStringInArray(array []string, value string) bool {
 	return false
 }
 
+func findSubstrAll(text string, substr string) (result []int) {
+	j := 0
+	start := 0
+
+	if len(substr) > len(text) {
+		return
+	}
+
+	for index, i := range text {
+		if byte(i) == substr[j] {
+			if j == 0 {
+				start = index
+			}
+
+			j += 1
+			if j == len(substr) {
+				result = append(result, start)
+				start = 0
+				j = 0
+			}
+		} else {
+			j = 0
+		}
+	}
+
+	return
+}
+
 func hexStringToColor(color string) (result sdl.Color) {
 	result.A = 255
 	result.R = hexToByte(color[1])<<4 + hexToByte(color[2])

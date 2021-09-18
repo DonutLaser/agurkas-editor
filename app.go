@@ -62,6 +62,7 @@ type App struct {
 	Buffer         Buffer
 	FileSearch     FileSearch
 	CommandPalette CommandPalette
+	Search         Search
 	Commands       map[string]func(app *App)
 
 	Mode               Mode
@@ -71,6 +72,7 @@ type App struct {
 	Cache              Cache
 	FileSearchOpen     bool
 	CommandPaletteOpen bool
+	SearchOpen         bool
 }
 
 // ==============================================================
@@ -91,6 +93,7 @@ func Init(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) (result
 	result.Buffer = CreateBuffer(result.LineHeight, &result.RegularFont14, sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight - result.StatusBar.Rect.H})
 	result.FileSearch = CreateFileSearch(result.LineHeight, &result.RegularFont14, &result.RegularFont12)
 	result.CommandPalette = CreateCommandPalette(result.LineHeight, &result.RegularFont14)
+	result.Search = CreateSearch(result.LineHeight, &result.RegularFont14)
 	result.Commands = map[string]func(app *App){}
 
 	cacheDir, _ := os.UserCacheDir()
@@ -126,6 +129,11 @@ func (app *App) Tick(input Input) {
 		return
 	}
 
+	if app.SearchOpen {
+		app.Search.Tick(input)
+		return
+	}
+
 	if input.Ctrl {
 		if input.Alt {
 			// Save workspace
@@ -152,11 +160,6 @@ func (app *App) Tick(input Input) {
 			app.showFileInExplorer()
 		}
 
-		return
-	}
-
-	if input.TypedCharacter == ':' && !app.CommandPaletteOpen {
-		app.openCommandPalette()
 		return
 	}
 
@@ -187,6 +190,8 @@ func (app *App) Render(renderer *sdl.Renderer) {
 		app.FileSearch.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
 	} else if app.CommandPaletteOpen {
 		app.CommandPalette.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
+	} else if app.SearchOpen {
+		app.Search.Render(renderer, &app.Buffer.Rect, &app.Theme.FileSearch)
 	}
 
 	renderer.Present()
@@ -386,6 +391,12 @@ func (app *App) handleInputNormal(input Input) {
 		checkError(err)
 
 		app.startNormalMode()
+	case ':':
+		app.openCommandPalette()
+	case '/':
+		app.openSearch()
+	case 'n':
+		app.Buffer.MoveToNextFindResult()
 	}
 }
 
@@ -585,6 +596,18 @@ func (app *App) openProjectSearch() {
 		}
 
 		app.openProject(path)
+	})
+}
+
+func (app *App) openSearch() {
+	app.SearchOpen = true
+	app.Search.Open(func(value string) {
+		app.SearchOpen = false
+		if value == "" {
+			return
+		}
+
+		app.Buffer.Find(value)
 	})
 }
 

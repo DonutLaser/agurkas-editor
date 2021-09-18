@@ -20,7 +20,7 @@ type Selection struct {
 	End   int32
 }
 
-type SelectionPoint struct {
+type CursorPoint struct {
 	Column int32
 	Line   int32
 	Offset int32
@@ -30,7 +30,8 @@ type Buffer struct {
 	Data                []byte
 	GapStart            int
 	GapEnd              int
-	SelectionStartPoint SelectionPoint
+	SelectionStartPoint CursorPoint
+	FindResults         []CursorPoint
 	TotalLines          int
 
 	Font *Font
@@ -52,7 +53,7 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) (result Buffer) {
 	result.Data = make([]byte, 16)
 	result.GapStart = 0
 	result.GapEnd = 15
-	result.SelectionStartPoint = SelectionPoint{Column: -1, Line: -1, Offset: 0}
+	result.SelectionStartPoint = CursorPoint{Column: -1, Line: -1, Offset: 0}
 	result.TotalLines = 1
 
 	result.Font = font
@@ -114,6 +115,24 @@ func (buffer *Buffer) StopSelection() {
 	buffer.SelectionStartPoint.Column = -1
 	buffer.SelectionStartPoint.Line = -1
 	buffer.SelectionStartPoint.Offset = 0
+}
+
+func (buffer *Buffer) Find(phrase string) {
+	buffer.FindResults = make([]CursorPoint, 0)
+
+	text, _ := buffer.GetText()
+
+	for index, line := range text {
+		columns := findSubstrAll(line, phrase)
+
+		if len(columns) > 0 {
+			for _, column := range columns {
+				buffer.FindResults = append(buffer.FindResults, CursorPoint{Line: int32(index), Column: int32(column)})
+			}
+		}
+	}
+
+	buffer.MoveToNextFindResult()
 }
 
 func (buffer *Buffer) Insert(char byte) {
@@ -358,6 +377,60 @@ func (buffer *Buffer) MoveToBookmark() {
 	}
 }
 
+func (buffer *Buffer) MoveToNextFindResult() {
+	for _, result := range buffer.FindResults {
+		if result.Line == buffer.Cursor.Line && result.Column > buffer.Cursor.Column {
+			for buffer.Cursor.Column < result.Column {
+				buffer.MoveRight()
+			}
+
+			return
+		}
+
+		if result.Line > buffer.Cursor.Line {
+			for buffer.Cursor.Line < result.Line {
+				buffer.MoveDown()
+			}
+
+			if result.Column < buffer.Cursor.Column {
+				for buffer.Cursor.Column > result.Column {
+					buffer.MoveLeft()
+				}
+			} else {
+				for buffer.Cursor.Column < result.Column {
+					buffer.MoveRight()
+				}
+			}
+
+			return
+		}
+	}
+}
+
+func (buffer *Buffer) MoveToPrevFindResult() {
+	for _, result := range buffer.FindResults {
+		if result.Line == buffer.Cursor.Line && result.Column < buffer.Cursor.Column {
+			for buffer.Cursor.Column < result.Column {
+				buffer.MoveLeft()
+			}
+		} else if result.Line < buffer.Cursor.Line {
+			for buffer.Cursor.Line > result.Line {
+				buffer.MoveUp()
+			}
+
+			if result.Column < buffer.Cursor.Column {
+				for buffer.Cursor.Column > result.Column {
+					buffer.MoveLeft()
+				}
+			} else {
+				for buffer.Cursor.Column < result.Column {
+					buffer.MoveRight()
+				}
+			}
+		}
+	}
+}
+
 func (buffer *Buffer) MarkCurrentPosition() {
 	buffer.BookmarkLine = buffer.Cursor.Line
 }
@@ -377,7 +450,7 @@ func (buffer *Buffer) GetText() (lines []string, selection []Selection) {
 	lines = strings.Split(sb.String(), "\n")
 
 	if buffer.SelectionStartPoint.Column > -1 {
-		start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, SelectionPoint{Column: buffer.Cursor.Column, Line: buffer.Cursor.Line})
+		start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, CursorPoint{Column: buffer.Cursor.Column, Line: buffer.Cursor.Line})
 
 		if start.Line != end.Line {
 			selection = append(selection, Selection{Line: start.Line, Start: start.Column, End: int32(len(lines[start.Line]))})
@@ -655,7 +728,7 @@ func (buffer *Buffer) maybeScrollUp() {
 	}
 }
 
-func (buffer *Buffer) sortSelectionEnds(point1 SelectionPoint, point2 SelectionPoint) (start SelectionPoint, end SelectionPoint) {
+func (buffer *Buffer) sortSelectionEnds(point1 CursorPoint, point2 CursorPoint) (start CursorPoint, end CursorPoint) {
 	if point1.Line > point2.Line || (point1.Line == point2.Line && point1.Column > point2.Column) {
 		return point2, point1
 	}
