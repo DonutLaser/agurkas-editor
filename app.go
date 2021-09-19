@@ -356,6 +356,7 @@ func (app *App) handleInputNormal(input Input) {
 			app.Submode = Submode_Delete
 		} else if app.Mode == Mode_Visual {
 			app.Buffer.RemoveSelection()
+			app.startNormalMode()
 		}
 	case 'c':
 		if app.Mode == Mode_Normal {
