@@ -76,6 +76,42 @@ func (buffer *Buffer) ChangeRemainingLine() {
 	buffer.Dirty = true
 }
 
+func (buffer *Buffer) IndentSelection() {
+	start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, buffer.cursorToCursorPoint())
+
+	if buffer.Cursor.Line == start.Line {
+		for buffer.Cursor.Line != end.Line {
+			buffer.Indent()
+			buffer.MoveDown()
+		}
+	} else {
+		for buffer.Cursor.Line != start.Line {
+			buffer.Indent()
+			buffer.MoveUp()
+		}
+	}
+
+	buffer.Indent() // Indent the last line
+}
+
+func (buffer *Buffer) OutdentSelection() {
+	start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, buffer.cursorToCursorPoint())
+
+	if buffer.Cursor.Line == start.Line {
+		for buffer.Cursor.Line != end.Line {
+			buffer.Outdent()
+			buffer.MoveDown()
+		}
+	} else {
+		for buffer.Cursor.Line != start.Line {
+			buffer.Outdent()
+			buffer.MoveUp()
+		}
+	}
+
+	buffer.Outdent() // Outdent the last line
+}
+
 func (buffer *Buffer) MoveUpByLines(lines int) {
 	for i := 0; i < lines; i += 1 {
 		buffer.MoveUp()

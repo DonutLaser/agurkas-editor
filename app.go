@@ -320,7 +320,9 @@ func (app *App) handleInputNormal(input Input) {
 			app.startNormalMode()
 		}
 	case 'D':
-		app.Buffer.RemoveRemainingLine()
+		if app.Mode == Mode_Normal {
+			app.Buffer.RemoveRemainingLine()
+		}
 	case '0':
 		app.Buffer.MoveToStartOfLine()
 	case '$':
@@ -350,12 +352,24 @@ func (app *App) handleInputNormal(input Input) {
 	case 'r':
 		app.Submode = Submode_Replace
 	case 'd':
-		app.Submode = Submode_Delete
+		if app.Mode == Mode_Normal {
+			app.Submode = Submode_Delete
+		} else if app.Mode == Mode_Visual {
+			app.Buffer.RemoveSelection()
+		}
 	case 'c':
-		app.Submode = Submode_Change
+		if app.Mode == Mode_Normal {
+			app.Submode = Submode_Change
+		} else if app.Mode == Mode_Visual {
+			app.Buffer.RemoveSelection()
+			app.startInsertMode()
+		}
 	case 'C':
-		app.startInsertMode()
-		app.Buffer.ChangeRemainingLine()
+		if app.Mode == Mode_Normal {
+
+			app.startInsertMode()
+			app.Buffer.ChangeRemainingLine()
+		}
 	case 'm':
 		if app.Mode == Mode_Normal {
 			app.Buffer.MarkCurrentPosition()
@@ -382,9 +396,19 @@ func (app *App) handleInputNormal(input Input) {
 			app.Buffer.MoveToPrevLineQuerySymbol()
 		}
 	case '>':
-		app.Buffer.Indent()
+		if app.Mode == Mode_Normal {
+			app.Buffer.Indent()
+		} else if app.Mode == Mode_Visual {
+			app.Buffer.IndentSelection()
+			app.startNormalMode()
+		}
 	case '<':
-		app.Buffer.Outdent()
+		if app.Mode == Mode_Normal {
+			app.Buffer.Outdent()
+		} else if app.Mode == Mode_Visual {
+			app.Buffer.OutdentSelection()
+			app.startNormalMode()
+		}
 	case 'v':
 		if app.Mode == Mode_Normal {
 			app.startVisualMode()
