@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -21,9 +22,10 @@ type Selection struct {
 }
 
 type CursorPoint struct {
-	Column int32
-	Line   int32
-	Offset int32
+	Column      int32
+	Line        int32
+	OffsetLeft  int32
+	OffsetRight int32
 }
 
 type Buffer struct {
@@ -53,7 +55,7 @@ func CreateBuffer(lineHeight int32, font *Font, rect sdl.Rect) (result Buffer) {
 	result.Data = make([]byte, 16)
 	result.GapStart = 0
 	result.GapEnd = 15
-	result.SelectionStartPoint = CursorPoint{Column: -1, Line: -1, Offset: 0}
+	result.SelectionStartPoint = CursorPoint{Column: -1, Line: -1, OffsetLeft: 0, OffsetRight: 0}
 	result.TotalLines = 1
 
 	result.Font = font
@@ -108,13 +110,17 @@ func (buffer *Buffer) SetData(data []byte, filepath string) {
 func (buffer *Buffer) StartSelection() {
 	buffer.SelectionStartPoint.Column = buffer.Cursor.Column
 	buffer.SelectionStartPoint.Line = buffer.Cursor.Line
-	buffer.SelectionStartPoint.Offset = int32(buffer.GapStart)
+	buffer.SelectionStartPoint.OffsetLeft = int32(buffer.GapStart)
+	buffer.SelectionStartPoint.OffsetRight = int32(buffer.GapEnd)
+
+	fmt.Println(buffer.GapStart)
 }
 
 func (buffer *Buffer) StopSelection() {
 	buffer.SelectionStartPoint.Column = -1
 	buffer.SelectionStartPoint.Line = -1
-	buffer.SelectionStartPoint.Offset = 0
+	buffer.SelectionStartPoint.OffsetLeft = 0
+	buffer.SelectionStartPoint.OffsetRight = 0
 }
 
 func (buffer *Buffer) Find(phrase string) {
@@ -205,13 +211,15 @@ func (buffer *Buffer) RemoveBefore() {
 	char := buffer.prevCharacter()
 	nextChar := buffer.nextCharacter()
 
-	buffer.Data[buffer.GapStart-1] = '_' // @TODO (!important) only useful for debug, remove when buffer implementation is stable
-	buffer.GapStart -= 1
-
 	if char == '\n' {
 		buffer.Cursor.Line -= 1
-		buffer.Cursor.Column = buffer.currentLineSize()
+
+		buffer.moveLeftInternal()
+		buffer.Cursor.Column = buffer.currentLineSize() - 1
+		buffer.moveRightInternal()
+
 		buffer.TotalLines -= 1
+		buffer.GapStart -= 1
 	} else {
 		buffer.Cursor.Column -= 1
 
@@ -219,6 +227,8 @@ func (buffer *Buffer) RemoveBefore() {
 		if pair != 0 && pair == nextChar {
 			buffer.RemoveAfter()
 		}
+
+		buffer.GapStart -= 1
 	}
 
 	buffer.Dirty = true
@@ -450,7 +460,7 @@ func (buffer *Buffer) GetText() (lines []string, selection []Selection) {
 	lines = strings.Split(sb.String(), "\n")
 
 	if buffer.SelectionStartPoint.Column > -1 {
-		start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, CursorPoint{Column: buffer.Cursor.Column, Line: buffer.Cursor.Line})
+		start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, buffer.cursorToCursorPoint())
 
 		if start.Line != end.Line {
 			selection = append(selection, Selection{Line: start.Line, Start: start.Column, End: int32(len(lines[start.Line]))})
@@ -475,12 +485,11 @@ func (buffer *Buffer) GetSelectionText() string {
 	var sb strings.Builder
 
 	if buffer.Cursor.Line > buffer.SelectionStartPoint.Line || (buffer.Cursor.Line == buffer.SelectionStartPoint.Line && buffer.Cursor.Column > buffer.SelectionStartPoint.Column) {
-		sb.WriteString(string(buffer.Data[buffer.SelectionStartPoint.Offset:buffer.GapStart]))
+		sb.WriteString(string(buffer.Data[buffer.SelectionStartPoint.OffsetLeft:buffer.GapStart]))
+		sb.WriteByte(nextChar)
 	} else {
-		sb.WriteString(string(buffer.Data[buffer.GapEnd:buffer.SelectionStartPoint.Offset]))
+		sb.WriteString(string(buffer.Data[buffer.GapEnd+1 : buffer.SelectionStartPoint.OffsetRight+1]))
 	}
-
-	sb.WriteByte(nextChar)
 
 	return sb.String()
 }
@@ -734,4 +743,13 @@ func (buffer *Buffer) sortSelectionEnds(point1 CursorPoint, point2 CursorPoint) 
 	}
 
 	return point1, point2
+}
+
+func (buffer *Buffer) cursorToCursorPoint() (result CursorPoint) {
+	result.Column = buffer.Cursor.Column
+	result.Line = buffer.Cursor.Line
+	result.OffsetLeft = int32(buffer.GapStart)
+	result.OffsetRight = int32(buffer.GapEnd)
+
+	return
 }

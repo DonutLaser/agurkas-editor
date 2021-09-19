@@ -55,6 +55,22 @@ func (buffer *Buffer) RemoveRemainingLine() {
 	buffer.Dirty = true
 }
 
+func (buffer *Buffer) RemoveSelection() {
+	start, end := buffer.sortSelectionEnds(buffer.SelectionStartPoint, buffer.cursorToCursorPoint())
+
+	if start.Column == buffer.Cursor.Column && start.Line == buffer.Cursor.Line {
+		for buffer.GapEnd != int(end.OffsetRight) {
+			buffer.RemoveAfter()
+		}
+	} else {
+		for buffer.GapStart != int(start.OffsetLeft) {
+			buffer.RemoveBefore()
+		}
+	}
+
+	buffer.RemoveAfter() // Remove symbol under the cursor
+}
+
 func (buffer *Buffer) ChangeRemainingLine() {
 	buffer.RemoveRemainingLine()
 	buffer.Dirty = true

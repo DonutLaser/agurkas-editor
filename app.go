@@ -313,7 +313,12 @@ func (app *App) handleInputNormal(input Input) {
 			app.Buffer.InsertNewLineAbove()
 		}
 	case 'x':
-		app.Buffer.RemoveAfter()
+		if app.Mode == Mode_Normal {
+			app.Buffer.RemoveAfter()
+		} else if app.Mode == Mode_Visual {
+			app.Buffer.RemoveSelection()
+			app.startNormalMode()
+		}
 	case 'D':
 		app.Buffer.RemoveRemainingLine()
 	case '0':
