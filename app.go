@@ -4,7 +4,6 @@ package main
 // @TODO (!important) language server
 // @TODO (!important) snippets
 // @TODO (!important) task
-// @TODO (!important) intellisense
 // @TODO (!important) surround with
 // @TODO (!important) search project
 // @TODO (!important) search and replace file/project

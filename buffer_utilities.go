@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // @TODO (!important) write tests for this
 func (buffer *Buffer) InsertNewLineBelow() {
 	buffer.MoveToEndOfLine()
@@ -77,6 +79,12 @@ func (buffer *Buffer) MoveToLine(line int32) {
 			buffer.MoveUp()
 		}
 	} else {
+		if line-1 > int32(buffer.TotalLines) {
+			line = int32(buffer.TotalLines)
+		}
+
+		fmt.Println(line)
+
 		for buffer.Cursor.Line < line-1 {
 			buffer.MoveDown()
 		}
